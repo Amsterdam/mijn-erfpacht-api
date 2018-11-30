@@ -15,8 +15,8 @@ Info about Swagger
 ==================
 
 In this app we use Flasgger -> https://github.com/rochacbruno/flasgger
-Flasgger provides the possibility to describe swagger per endpoint in the 
-endpoint's description. These description is automatically collected and merged 
+Flasgger provides the possibility to describe swagger per endpoint in the
+endpoint's description. These description is automatically collected and merged
 into a swagger spec which is exposed on '/'.
 """
 
@@ -70,7 +70,9 @@ class ErfpachtCheck(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('bsn')
         bsn = parser.parse_args()['bsn']
-        return simplejson.dumps(con.check_erfpacht(bsn))
+        bsn = '123443210'
+        # return simplejson.dumps(con.check_erfpacht(bsn))
+        con.check_erfpacht(bsn)
 
 
 # Add resources to the api
