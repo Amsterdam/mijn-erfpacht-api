@@ -26,12 +26,19 @@ class TestAPI(TestCase):
         Test the check-erfpacht endpoint and check if the MijnErfpachtConnection
         is correctly called
         """
-        bsn = '111222333'
-        res = self.client.get('/check-erfpacht?bsn={0}'.format(bsn))
+        # Mock the MijnErfpacht response
+        mocked_method.return_value = 'true'
+
+        # The API expects a SAML token added by the TMA middleware in production
+        # Here we just add in to the request
+        saml_token = 'sometoken'
+        res = self.client.get(
+            '/check-erfpacht', headers={'x-saml-attribute-token1': saml_token})
 
         self.assertEqual(res.status_code, 200)
+
         # ANY covers the self argument
-        mocked_method.assert_called_once_with(ANY, bsn)
+        mocked_method.assert_called_once_with(ANY, saml_token)
 
     def test_post_check_erfpacht(self):
         """ Test if posting is not allowed """

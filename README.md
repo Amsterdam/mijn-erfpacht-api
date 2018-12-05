@@ -46,7 +46,7 @@ Beoogde work flow van de applicatie:
 
 1. Clone repo and 'cd' in
 2. Create a virtual env and activate
-3. Run command 'pip install -r app/requirements.txt'
+3. Run command 'pip install -r requirements.txt'
 4. Set environment variables:
    - export FLASK_APP=app/api/server.py
    - export MIJN_ERFPACHT_ENCRYPTION_VECTOR=<Find on Rattic -> MijnErfpacht encryption vector>
