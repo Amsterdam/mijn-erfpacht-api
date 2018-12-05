@@ -4,6 +4,7 @@ import requests
 
 from .utils import encrypt
 from .config import credentials
+from ..tma_utils import get_bsn_from_saml_token
 
 
 class MijnErfpachtConnection:
@@ -12,8 +13,11 @@ class MijnErfpachtConnection:
     # URL where to check for erfpacht
     URL = 'https://mijnerfpacht.acc.amsterdam.nl/api/check/groundlease/user/'
 
-    def check_erfpacht(self, bsn):
+    def check_erfpacht(self, saml_token):
         """ Check for erfpacht at MijnErfpacht based on a BSN """
+        # Get the BSN from the SAML token
+        bsn = get_bsn_from_saml_token(saml_token)
+
         # Encrypt and decode the bsn
         encrypted = encrypt(bsn)
         encoded_encryption = base64.urlsafe_b64encode(

@@ -68,11 +68,15 @@ class ErfpachtCheck(Resource):
             description: Unknown BSN
         """
         parser = reqparse.RequestParser()
-        parser.add_argument('bsn')
-        bsn = parser.parse_args()['bsn']
-        bsn = '123443210'
-        # return simplejson.dumps(con.check_erfpacht(bsn))
-        con.check_erfpacht(bsn)
+        token_arg_name = 'x-saml-attribute-token1'
+        parser.add_argument(
+            token_arg_name,
+            location='headers',
+            required=True,
+            help='SAML token required'
+        )
+        saml_token = parser.parse_args()[token_arg_name]
+        return con.check_erfpacht(saml_token)
 
 
 # Add resources to the api

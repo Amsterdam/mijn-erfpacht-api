@@ -4,3 +4,4 @@ __pycache__
 reports
 /api/.cache/
 .coverage
+.vscode
