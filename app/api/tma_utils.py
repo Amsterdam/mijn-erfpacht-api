@@ -15,15 +15,15 @@ class SamlVerificationException(Exception):
 def get_bsn_from_saml_token(saml_token):
     """ Retrieve the SAML token from the request header """
 
-    return '123443210'
+    # return '123443210'
 
-    # tma_certificate = get_tma_certificate()
+    tma_certificate = get_tma_certificate()
 
-    # bsn = verify_saml_token_and_retrieve_attr(
-    #     token=saml_token,
-    #     attr='uid',
-    #     cert=tma_certificate)
-    # return bsn
+    bsn = verify_saml_token_and_retrieve_attr(
+        token=saml_token,
+        attr='uid',
+        cert=tma_certificate)
+    return bsn
 
 
 def get_tma_certificate():
