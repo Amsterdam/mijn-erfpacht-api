@@ -2,9 +2,11 @@
 
 ## Introduction
 
-Ontsluiting van de REST API van MijnErfpacht.
+A REST API which discloses the MijnErfpacht REST API.
 
-Beoogde work flow van de applicatie:
+Swagger is exposed on '/api/erfpacht' and provides all required API info.
+
+Request roundtrip:
 
        +--------------+
        |              |
@@ -14,7 +16,7 @@ Beoogde work flow van de applicatie:
            ^      |
            |      | req       +------------------------+
            |      |           |                        |
-           |      +---------> |   TMA middleware       |
+           |      +---------> |   TMA                  |
      res   |                  |   (adds a SAML token   |
            |                  |   holding the BSN)     |
            |      +---------+ |                        |
@@ -24,7 +26,7 @@ Beoogde work flow van de applicatie:
        |                                  |
        |   API                            |
        |   (asks the MijnErfpacht         |
-       |   for if the BSN has erfpacht)   |
+       |   if the BSN has erfpacht)       |
        |                                  |
        +----------------------------------+
            ^      |
@@ -42,27 +44,40 @@ Beoogde work flow van de applicatie:
        |                      |
        +----------------------+
 
-## Local development
-
-1. Clone repo and 'cd' in
-2. Create a virtual env and activate
-3. Run command 'pip install -r requirements.txt'
-4. Set environment variables:
-   - export FLASK_APP=app/api/server.py
-   - export MIJN_ERFPACHT_ENCRYPTION_VECTOR=<Find on Rattic -> MijnErfpacht encryption vector>
-   - export MIJN_ERFPACHT_ENCRYPTION_KEY=<Find on Rattic -> MijnErfpacht encryption key>
-   - export MIJN_ERFPACHT_API_KEY=<Find on Rattic -> MijnErfpacht API key>
-5. Make sure there is a tma-cert.txt in the '/app/api' directory which holds the TMA Certificate
-
 ### Requirements
 
 - Access to the Amsterdam secure Gitlab
 - Access to Rattic
 
+### Local development
+
+1. Clone repo and `cd` in
+2. Create a virtual env and activate
+3. Run `pip install -r app/requirements.txt`
+4. Set environment variables:
+   - `export FLASK_APP=app/api/server.py`
+   - `export MIJN_ERFPACHT_ENCRYPTION_VECTOR=<Find on Rattic -> MijnErfpacht encryption vector>`
+   - `export MIJN_ERFPACHT_ENCRYPTION_KEY=<Find on Rattic -> MijnErfpacht encryption key>`
+     - NOTE: Wrap the encryption key in single quotes in order to avoid chars
+       being executed as commands
+   - `export MIJN_ERFPACHT_API_KEY=<Find on Rattic -> MijnErfpacht API key>`
+   - `export TMA_CERTIFICATE=<path to certificate>`
+      - TMA certificate to decode the saml token (rattic: "TMA certificaat local")
+        (you can put this line in your shell rc file)
+    
+5. Run `flask run`
+
+### Deployment
+
+1. Make sure the env vars described in 'Local development' are set
+2. Add another env var: HTTPS_PROXY=http://<ask someone>
+3. Run `docker-compose up --build`
+4. Get '/status/health' to check if the API is up and running
+
 ### Testing
 
-1. Clone repo and 'cd' in
+1. Clone repo
 2. Create a virtual env and activate
-3. Run command 'pip install -r app/requirements.txt'
-4. Set environment variables: export FLASK_APP=app/api/server.py
-5. Run command 'python -m unittest'
+3. Run `pip install -r app/requirements.txt`
+4. `cd app`
+5. Run `python -m unittest`

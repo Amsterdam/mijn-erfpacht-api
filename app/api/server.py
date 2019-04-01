@@ -1,9 +1,14 @@
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_restful import Resource, Api, reqparse
 from flasgger import Swagger
-import simplejson
-from .mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
+
+from api.config import check_env
+from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
+from api.tma_utils import get_bsn_from_request
+
+# Check the environment, will raise an exception if the server is not supplied with sufficient info
+check_env()
 
 # Init app and set CORS
 app = Flask(__name__)
@@ -17,9 +22,8 @@ Info about Swagger
 In this app we use Flasgger -> https://github.com/rochacbruno/flasgger
 Flasgger provides the possibility to describe swagger per endpoint in the
 endpoint's description. These description is automatically collected and merged
-into a swagger spec which is exposed on '/'.
+into a swagger spec which is exposed on '/api/erfpacht/'.
 """
-
 # Configure Swagger
 swagger_config = {
     "headers": [
@@ -27,16 +31,16 @@ swagger_config = {
     "specs": [
         {
             "endpoint": 'apispec_1',
-            "route": '/apispec_1.json',
+            "route": '/api/erfpacht/apispec_1.json',
             "rule_filter": lambda rule: True,  # all in
             "model_filter": lambda tag: True,  # all in
             "title": "MijnErfpacht API Client"
         }
     ],
-    "static_url_path": "/flasgger_static",
+    "static_url_path": "/api/erfpacht/static",
     # "static_folder": "static",  # must be set by user
     "swagger_ui": True,
-    "specs_route": "/"
+    "specs_route": "/api/erfpacht"
 }
 swagger = Swagger(app, config=swagger_config)
 
@@ -45,27 +49,19 @@ con = MijnErfpachtConnection()
 
 
 class ErfpachtCheck(Resource):
-    """ Class representing the '/check-erfpacht' endpoint"""
+    """ Class representing the 'api/erfpacht/check-erfpacht' endpoint"""
 
     def get(self):
         """
         Check if a citizen has erfpacht based on a BSN
         ---
-        parameters:
-          - name: BSN
-            type: string
-            description: The BSN for which the voorzieningen should be fetched
         responses:
           200:
             description: Erfpacht successfully checked
-            type: object
+            type: boolean
             example: True
-          401:
-            description: Invalid authentication token
-          403:
-            description: Disabled functionality
-          404:
-            description: Unknown BSN
+          400:
+            description: Invalid SAML or BSN
         """
         parser = reqparse.RequestParser()
         token_arg_name = 'x-saml-attribute-token1'
@@ -75,12 +71,20 @@ class ErfpachtCheck(Resource):
             required=True,
             help='SAML token required'
         )
-        saml_token = parser.parse_args()[token_arg_name]
-        return con.check_erfpacht(saml_token)
+        bsn = get_bsn_from_request(request)
+        return con.check_erfpacht(bsn)
+
+
+class Health(Resource):
+    """ Used in deployment to check if the API lives """
+
+    def get(self):
+        return 'OK'
 
 
 # Add resources to the api
-api.add_resource(ErfpachtCheck, '/check-erfpacht')
+api.add_resource(ErfpachtCheck, '/api/erfpacht/check-erfpacht')
+api.add_resource(Health, '/status/health')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run()

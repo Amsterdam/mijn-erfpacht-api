@@ -1,10 +1,6 @@
-import base64
-
-from urllib import parse
 from Crypto.Cipher import AES
-from Crypto import Random
 
-from .config import credentials
+from api.mijn_erfpacht.config import credentials
 
 
 def encrypt(plaintext):
@@ -26,16 +22,39 @@ def encrypt(plaintext):
     # byte[] encrypted = cipher.doFinal(data.getBytes())
     # return Base64.encodeBase64String(encrypted)
     """
-    # Create a randam  vector (this is how it should work, but MijnErfPacht
+
+    # FIXME:
+    # Create a random  vector (this is how it should work, but MijnErfPacht
     # works with a static vector)
     # initialization_vector = Random.new().read(AES.block_size)
 
-    # Set the static vector from env
-    initialization_vector = bytes(credentials['ENCRYPTION_VECTOR'], 'utf-8')
+    # Get the static vector from env
+    vector = credentials['ENCRYPTION_VECTOR']
+    if not vector:
+        raise Exception(
+            'No encryption vector found in environment variables or vector ' +
+            'is None/empty string')
+    try:
+        initialization_vector = bytes(
+            vector, 'utf-8')
+    except Exception as e:
+        raise Exception('Unable to use encryption vector. {}'.format(e)) from e
+
+    # Get the encryption key from env
+    key = credentials['ENCRYPTION_KEY']
+    if not key:
+        raise Exception(
+            'No encryption key found in environment variables or key ' +
+            'is None/empty string')
+    try:
+        encryption_key = bytes(
+            key, 'utf-8')
+    except Exception as e:
+        raise Exception('Unable to use encryption key. {}'.format(e)) from e
 
     # Create a AES cipher
     cipher = AES.new(
-        key=bytes(credentials['ENCRYPTION_KEY'], 'utf-8'),
+        key=encryption_key,
         mode=AES.MODE_CBC,
         IV=initialization_vector
     )

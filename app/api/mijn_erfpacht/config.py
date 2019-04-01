@@ -5,3 +5,5 @@ credentials = dict(
     ENCRYPTION_KEY=os.getenv('MIJN_ERFPACHT_ENCRYPTION_KEY'),
     API_KEY=os.getenv('MIJN_ERFPACHT_API_KEY')
 )
+
+API_URL = os.getenv('MIJN_ERFPACHT_API_URL')

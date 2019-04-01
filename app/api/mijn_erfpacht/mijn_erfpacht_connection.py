@@ -2,32 +2,58 @@ import base64
 
 import requests
 
-from .utils import encrypt
-from .config import credentials
-from ..tma_utils import get_bsn_from_saml_token
+from api.mijn_erfpacht.utils import encrypt
+from api.mijn_erfpacht.config import credentials, API_URL
 
 
 class MijnErfpachtConnection:
     """ This helper class represents the connection to the MijnErfpacht API """
 
-    # URL where to check for erfpacht
-    URL = 'https://mijnerfpacht.acc.amsterdam.nl/api/check/groundlease/user/'
-
-    def check_erfpacht(self, saml_token):
-        """ Check for erfpacht at MijnErfpacht based on a BSN """
-        # Get the BSN from the SAML token
-        bsn = get_bsn_from_saml_token(saml_token)
-
-        # Encrypt and decode the bsn
+    def get_from_erfpacht(self, bsn):
         encrypted = encrypt(bsn)
         encoded_encryption = base64.urlsafe_b64encode(
             encrypted).decode('ASCII')
 
-        # Check the MijnErfpacht API if the BSN has erfpacht
-        headers = {'X-API-KEY': credentials['API_KEY']}
+        # Get the api key from env
+        key = credentials['API_KEY']
+        if not key:
+            raise Exception(
+                'No api key found in environment variables or key ' +
+                'is None/empty string')
+
+        headers = {'X-API-KEY': key}
         res = requests.get(
-            '{}{}'.format(self.URL, encoded_encryption),
+            '{}{}'.format(API_URL, encoded_encryption),
             headers=headers
         )
+        return res
+
+    def check_erfpacht(self, bsn):
+        """ Check for erfpacht at MijnErfpacht based on a BSN """
+        # Encrypt and decode the bsn
+        # Check the MijnErfpacht API if the BSN has erfpacht
+        # Handle forbidden response
+
+        res = self.get_from_erfpacht(bsn)
+
+        if res.status_code == 403:
+            raise Exception(
+                'Unable to authenticate to source API. ' +
+                'Check if the provided api key is correct and if you are ' +
+                'making the request through a whitelisted ' +
+                'environment (e.g. secure VPN).')
+
+        # Handle 400 range responses
+        if str(res.status_code)[0] == '4':
+            raise Exception(
+                'The source API responded with 4xx status code, ' +
+                'saying: {}'.format(res.text))
+
+        from api.server import app
+        app.logger.info(
+            'Successfully forwarded request. Response: {}'.format(res.text))
+
+        if res.text == "true":
+            return {'status': True}
 
         return res.text
