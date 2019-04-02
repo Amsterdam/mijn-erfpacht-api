@@ -1,7 +1,8 @@
 .idea
 __pycache__
-/venv
+venv
 reports
 /api/.cache/
 .coverage
 .vscode
+*.pyc
