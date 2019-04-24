@@ -53,7 +53,5 @@ class MijnErfpachtConnection:
         app.logger.info(
             'Successfully forwarded request. Response: {}'.format(res.text))
 
-        if res.text == "true":
-            return {'status': True}
 
-        return res.text
+        return {'status': res.text == "true"}
