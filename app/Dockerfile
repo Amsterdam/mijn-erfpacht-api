@@ -16,6 +16,5 @@ COPY .flake8 /app/
 
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-
 #ENTRYPOINT ["uwsgi"]
 CMD uwsgi

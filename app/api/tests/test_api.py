@@ -5,6 +5,7 @@ from tma_saml import FlaskServerTMATestCase
 os.environ['MIJN_ERFPACHT_ENCRYPTION_VECTOR'] = '1234567890123456'
 os.environ['MIJN_ERFPACHT_ENCRYPTION_KEY'] = '1234567890123456'
 os.environ['MIJN_ERFPACHT_API_KEY'] = '1234567890123456'
+os.environ['TMA_CERTIFICATE'] = __file__  # any file, it should not be used
 
 from api.server import app  # noqa: E402
 
@@ -35,6 +36,7 @@ class TestAPI(FlaskServerTMATestCase):
     # =================================
 
     @patch('api.mijn_erfpacht.mijn_erfpacht_connection.requests.get', new=api_mock)
+    @patch('api.server.get_bsn_from_request', lambda x: '1234567890')
     def test_get_check_erfpacht_view(self):
         # Create SAML headers
         SAML_HEADERS = self.add_digi_d_headers(self.TEST_BSN)
@@ -45,6 +47,7 @@ class TestAPI(FlaskServerTMATestCase):
         self.assertEqual(res.json, {"status": True})
 
     @patch(MijnErfpachtConnectionLocation + '.check_erfpacht', autospec=True)
+    @patch('api.server.get_bsn_from_request', lambda x: '111222333')
     def test_get_check_erfpacht(self, mocked_method):
         """
         Test if getting is allowed, if the SAML token is correctly decoded
