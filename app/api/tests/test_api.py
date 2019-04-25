@@ -1,7 +1,12 @@
+import os
 from unittest.mock import patch, ANY
 from tma_saml import FlaskServerTMATestCase
 
-from api.server import app
+os.environ['MIJN_ERFPACHT_ENCRYPTION_VECTOR'] = '1234567890123456'
+os.environ['MIJN_ERFPACHT_ENCRYPTION_KEY'] = '1234567890123456'
+os.environ['MIJN_ERFPACHT_API_KEY'] = '1234567890123456'
+
+from api.server import app  # noqa: E402
 
 MijnErfpachtConnectionLocation = 'api.mijn_erfpacht.mijn_erfpacht_connection.MijnErfpachtConnection'
 
@@ -38,7 +43,6 @@ class TestAPI(FlaskServerTMATestCase):
         res = self.client.get(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json, {"status": True})
-
 
     @patch(MijnErfpachtConnectionLocation + '.check_erfpacht', autospec=True)
     def test_get_check_erfpacht(self, mocked_method):
