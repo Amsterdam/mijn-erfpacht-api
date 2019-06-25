@@ -1,0 +1,16 @@
+--extra-index-url https://nexus.secure.amsterdam.nl/repository/pypi-hosted/simple
+requests
+pycrypto
+
+# flask and plugins
+Flask
+Flask-Cors
+Flask-RESTful
+flasgger
+
+# TMA token verification tools
+tma-saml>=0.2
+
+# testing tools
+flake8
+coverage
