@@ -1,19 +1,20 @@
+import base64
 import os
 from unittest.mock import patch, ANY
+
 from tma_saml import FlaskServerTMATestCase
+from tma_saml.for_tests.cert_and_key import server_crt
 
 os.environ['MIJN_ERFPACHT_ENCRYPTION_VECTOR'] = '1234567890123456'
 os.environ['MIJN_ERFPACHT_ENCRYPTION_KEY'] = '1234567890123456'
 os.environ['MIJN_ERFPACHT_API_KEY'] = '1234567890123456'
 os.environ['TMA_CERTIFICATE'] = __file__  # any file, it should not be used
+os.environ['MIJN_ERFPACHT_API_URL'] = 'X'
 
+from api.mijn_erfpacht.utils import encrypt  # noqa: E402
 from api.server import app  # noqa: E402
 
 MijnErfpachtConnectionLocation = 'api.mijn_erfpacht.mijn_erfpacht_connection.MijnErfpachtConnection'
-
-
-def api_mock(*args, **kwargs):
-    return ApiMock()
 
 
 class ApiMock:
@@ -35,16 +36,24 @@ class TestAPI(FlaskServerTMATestCase):
     # Test the /check-erfpacht endpoint
     # =================================
 
-    @patch('api.mijn_erfpacht.mijn_erfpacht_connection.requests.get', new=api_mock)
-    @patch('api.server.get_bsn_from_request', lambda x: '1234567890')
-    def test_get_check_erfpacht_view(self):
+    @patch('api.mijn_erfpacht.mijn_erfpacht_connection.requests.get', autospec=True)
+    @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
+    def test_get_check_erfpacht_view(self, api_mocked):
+        api_mocked.return_value = ApiMock()
         # Create SAML headers
         SAML_HEADERS = self.add_digi_d_headers(self.TEST_BSN)
 
         # Call the API with SAML headers
         res = self.client.get(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
-        self.assertEqual(res.status_code, 200)
+
+        self.assertEqual(res.status_code, 200, res.data)
         self.assertEqual(res.json, {"status": True})
+
+        test_bsn_encrypted = base64.urlsafe_b64encode(encrypt(self.TEST_BSN)).decode('ASCII')
+        call_bsn_encrypted = api_mocked.call_args[0][0].lstrip(os.environ['MIJN_ERFPACHT_API_URL'])
+
+        # check mock if the bsn is encrypted
+        self.assertEqual(call_bsn_encrypted, test_bsn_encrypted)
 
     @patch(MijnErfpachtConnectionLocation + '.check_erfpacht', autospec=True)
     @patch('api.server.get_bsn_from_request', lambda x: '111222333')
