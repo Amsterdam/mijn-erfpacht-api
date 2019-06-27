@@ -9,4 +9,3 @@ def check_env():
                     if not os.getenv(v, None)]
     if missing_vars:
         raise Exception('Missing environment variables {}'.format(', '.join(missing_vars)))
-
