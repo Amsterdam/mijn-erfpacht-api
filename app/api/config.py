@@ -1,5 +1,7 @@
 import os
 
+SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+
 
 def check_env():
     """
