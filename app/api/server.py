@@ -4,14 +4,14 @@ from flask_cors import CORS
 from flask_restful import Resource, Api, reqparse
 from flasgger import Swagger
 
-from api.config import check_env
+from api.config import check_env, SENTRY_DSN
 from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
 from api.tma_utils import get_bsn_from_request
 
 # Check the environment, will raise an exception if the server is not supplied with sufficient info
 from sentry_sdk.integrations.flask import FlaskIntegration
 
-from app.api.config import SENTRY_DSN
+
 
 check_env()
 
