@@ -12,7 +12,6 @@ from api.tma_utils import get_bsn_from_request
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 
-
 check_env()
 
 # Init app and set CORS
