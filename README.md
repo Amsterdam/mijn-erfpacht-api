@@ -31,9 +31,7 @@ Request roundtrip:
        +----------------------------------+
            ^      |
            |      |
-           |      |
      res   |      |   req (including encrypted BSN)
-           |      |
            |      |
            |      v
        +----------------------+
