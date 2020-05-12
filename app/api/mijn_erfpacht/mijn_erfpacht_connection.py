@@ -24,7 +24,8 @@ class MijnErfpachtConnection:
         headers = {'X-API-KEY': key}
         res = requests.get(
             '{}{}'.format(API_URL, encoded_encryption),
-            headers=headers
+            headers=headers,
+            timeout=12
         )
         return res
 
