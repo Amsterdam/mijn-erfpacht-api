@@ -25,6 +25,7 @@ class ApiMock:
 class TestAPI(FlaskServerTMATestCase):
 
     TEST_BSN = '111222333'
+    TEST_KVK = '90001354'  # kvk nummer taken from https://developers.kvk.nl/documentation/profile-v2-test
     CHECK_ERFPACHT_URL = '/api/erfpacht/check-erfpacht'
 
     def setUp(self):
@@ -53,10 +54,10 @@ class TestAPI(FlaskServerTMATestCase):
         call_bsn_encrypted = api_mocked.call_args[0][0].lstrip(os.environ['MIJN_ERFPACHT_API_URL'])
 
         # check mock if the bsn is encrypted
-        self.assertEqual(call_bsn_encrypted, test_bsn_encrypted)
+        self.assertEqual(call_bsn_encrypted, f"/api/check/groundlease/user/{test_bsn_encrypted}")
 
     @patch(MijnErfpachtConnectionLocation + '.check_erfpacht', autospec=True)
-    @patch('api.server.get_bsn_from_request', lambda x: '111222333')
+    @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
     def test_get_check_erfpacht(self, mocked_method):
         """
         Test if getting is allowed, if the SAML token is correctly decoded
@@ -76,8 +77,32 @@ class TestAPI(FlaskServerTMATestCase):
 
         # Check if the mocked method got called with the expected args
         # ANY covers the self argument
-        mocked_method.assert_called_once_with(ANY, self.TEST_BSN)
+        mocked_method.assert_called_once_with(ANY, self.TEST_BSN, 'user')
 
+    @patch(MijnErfpachtConnectionLocation + '.check_erfpacht', autospec=True)
+    @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
+    def test_get_check_erfpacht(self, mocked_method):
+        """
+        Test if getting is allowed, if the SAML token is correctly decoded
+        and if the MijnErfpachtConnection is called
+        """
+        # Mock the MijnErfpacht response
+        mocked_method.return_value = 'true'
+
+        # Create SAML headers
+        SAML_HEADERS = self.add_e_herkenning_headers(self.TEST_KVK)
+
+        # Call the API with SAML headers
+        res = self.client.get(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
+
+        # Check for a proper response
+        self.assertEqual(res.status_code, 200)
+
+        # Check if the mocked method got called with the expected args
+        # ANY covers the self argument
+        mocked_method.assert_called_once_with(ANY, self.TEST_KVK, 'company')
+
+    @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
     def test_get_check_erfpacht_invalid_saml(self):
         """ Test if an invalid SAML token gets rejected """
         # Create SAML headers
@@ -98,6 +123,7 @@ class TestAPI(FlaskServerTMATestCase):
         # Check response code
         self.assertEqual(res.status_code, 400)
 
+    @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
     def test_get_check_erfpacht_invalid_bsn(self):
         """ Test if an invalid SAML token get rejected """
         # Create SAML headers with a BSN which doesn't meet the elf proef

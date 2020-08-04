@@ -9,7 +9,7 @@ Flask-RESTful
 flasgger
 
 # TMA token verification tools
-tma-saml>=0.2
+tma-saml>=0.4.1
 
 # testing tools
 flake8
