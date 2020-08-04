@@ -81,7 +81,7 @@ class TestAPI(FlaskServerTMATestCase):
 
     @patch(MijnErfpachtConnectionLocation + '.check_erfpacht', autospec=True)
     @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
-    def test_get_check_erfpacht(self, mocked_method):
+    def test_get_check_erfpacht_kvk(self, mocked_method):
         """
         Test if getting is allowed, if the SAML token is correctly decoded
         and if the MijnErfpachtConnection is called

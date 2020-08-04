@@ -87,7 +87,7 @@ class ErfpachtCheck(Resource):
         try:
             kvk_nummer = get_kvk_number_from_request(request)
             return con.check_erfpacht_kvk(kvk_nummer)
-        except SamlVerificationException as e:
+        except SamlVerificationException:
             return {'status': 'ERROR', 'message': 'Missing SAML token'}, 400
         except KeyError:
             # does not contain kvk number, might still contain BSN
