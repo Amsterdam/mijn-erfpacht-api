@@ -9,8 +9,9 @@ from api.mijn_erfpacht.config import credentials, API_URL
 class MijnErfpachtConnection:
     """ This helper class represents the connection to the MijnErfpacht API """
 
-    def get_from_erfpacht(self, bsn):
-        encrypted = encrypt(bsn)
+    def get_from_erfpacht(self, identifier, kind):
+        assert kind in ['user', 'company']
+        encrypted = encrypt(identifier)
         encoded_encryption = base64.urlsafe_b64encode(
             encrypted).decode('ASCII')
 
@@ -23,19 +24,25 @@ class MijnErfpachtConnection:
 
         headers = {'X-API-KEY': key}
         res = requests.get(
-            '{}{}'.format(API_URL, encoded_encryption),
+            '{}/api/check/groundlease/{}/{}'.format(API_URL, kind, encoded_encryption),
             headers=headers,
             timeout=12
         )
         return res
 
-    def check_erfpacht(self, bsn):
+    def check_erfpacht_bsn(self, bsn):
+        return self.check_erfpacht(bsn, 'user')
+
+    def check_erfpacht_kvk(self, kvk_nummer):
+        return self.check_erfpacht(kvk_nummer, 'company')
+
+    def check_erfpacht(self, identifier, kind='user'):
         """ Check for erfpacht at MijnErfpacht based on a BSN """
         # Encrypt and decode the bsn
         # Check the MijnErfpacht API if the BSN has erfpacht
         # Handle forbidden response
 
-        res = self.get_from_erfpacht(bsn)
+        res = self.get_from_erfpacht(identifier, kind)
 
         if res.status_code == 403:
             raise Exception(

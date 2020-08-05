@@ -6,11 +6,11 @@ from flasgger import Swagger
 
 from api.config import check_env, SENTRY_DSN
 from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
-from api.tma_utils import get_bsn_from_request
+from api.tma_utils import get_bsn_from_request, get_kvk_number_from_request
 
 # Check the environment, will raise an exception if the server is not supplied with sufficient info
 from sentry_sdk.integrations.flask import FlaskIntegration
-
+from tma_saml import SamlVerificationException
 
 check_env()
 
@@ -55,7 +55,7 @@ swagger_config = {
 }
 swagger = Swagger(app, config=swagger_config)
 
-# Init connection to ZorgNed
+# Init connection to mijn erfpacht
 con = MijnErfpachtConnection()
 
 
@@ -82,8 +82,19 @@ class ErfpachtCheck(Resource):
             required=True,
             help='SAML token required'
         )
+        kvk_nummer = None
+
+        try:
+            kvk_nummer = get_kvk_number_from_request(request)
+            return con.check_erfpacht_kvk(kvk_nummer)
+        except SamlVerificationException:
+            return {'status': 'ERROR', 'message': 'Missing SAML token'}, 400
+        except KeyError:
+            # does not contain kvk number, might still contain BSN
+            pass
+
         bsn = get_bsn_from_request(request)
-        return con.check_erfpacht(bsn)
+        return con.check_erfpacht_bsn(bsn)
 
 
 class Health(Resource):
