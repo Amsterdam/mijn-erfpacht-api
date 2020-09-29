@@ -9,6 +9,14 @@ from api.mijn_erfpacht.config import credentials, API_URL
 class MijnErfpachtConnection:
     """ This helper class represents the connection to the MijnErfpacht API """
 
+    def _make_request(self, url: str, identifier: str):
+        """
+        Make a request to url with the encrypted identifier concatted at the end.
+        :param url:
+        :param identifier: BSN or KVK number
+        :return:
+        """
+        encrypted = encrypt(identifier)
     def get_from_erfpacht(self, identifier, kind):
         assert kind in ['user', 'company']
         encrypted = encrypt(identifier)
@@ -41,7 +49,6 @@ class MijnErfpachtConnection:
         # Encrypt and decode the bsn
         # Check the MijnErfpacht API if the BSN has erfpacht
         # Handle forbidden response
-
         res = self.get_from_erfpacht(identifier, kind)
 
         if res.status_code == 403:
@@ -57,8 +64,25 @@ class MijnErfpachtConnection:
                 'The source API responded with 4xx status code, ' +
                 'saying: {}'.format(res.text))
 
-        from api.server import app
-        app.logger.info(
-            'Successfully forwarded request. Response: {}'.format(res.text))
+        # from api.server import app
+        # app.logger.info(
+        #     'Successfully forwarded request. Response: {}'.format(res.text))
 
         return {'status': res.text == "true"}
+
+    def get_notifications_bsn(self, bsn):
+        return self.get_notifications(bsn, 'bsn')
+
+    def get_notifications_kvk(self, kvk_number):
+        return self.get_notifications(kvk_number, 'kvk')
+
+    def get_notifications(self, identifier, kind):
+        assert kind in ['bsn', 'kvk']
+
+        url = f'{API_URL}/api/notifications/{kind}'
+
+        res = self._make_request(url, identifier)
+        return {
+            'status': 'OK',
+            'content': res,
+        }
