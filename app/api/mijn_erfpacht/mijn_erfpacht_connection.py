@@ -29,9 +29,9 @@ class MijnErfpachtConnection:
 
         headers = {'X-API-KEY': key}
         res = requests.get(
-            '{}/api/check/groundlease/{}/{}'.format(API_URL, kind, encoded_encryption),
+            f'{url}/{encoded_encryption}',
             headers=headers,
-            timeout=12
+            timeout=9
         )
         return res
 
@@ -47,7 +47,8 @@ class MijnErfpachtConnection:
         # Check the MijnErfpacht API if the BSN has erfpacht
         # Handle forbidden response
         assert kind in ['user', 'company']
-        res = self.get_from_erfpacht(identifier, kind)
+        url = f'{API_URL}/api/check/groundlease/{kind}'
+        res = self._make_request(identifier, kind)
 
         if res.status_code == 403:
             raise Exception(
@@ -61,10 +62,6 @@ class MijnErfpachtConnection:
             raise Exception(
                 'The source API responded with 4xx status code, ' +
                 'saying: {}'.format(res.text))
-
-        # from api.server import app
-        # app.logger.info(
-        #     'Successfully forwarded request. Response: {}'.format(res.text))
 
         return {'status': res.text == "true"}
 
