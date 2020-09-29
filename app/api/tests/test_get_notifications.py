@@ -47,4 +47,3 @@ class TestAPI(FlaskServerTMATestCase):
 
         print(res.json)
         self.assertEqual(res.status_code, 200)
-        

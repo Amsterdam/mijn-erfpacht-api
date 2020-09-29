@@ -16,8 +16,6 @@ class MijnErfpachtConnection:
         :param identifier: BSN or KVK number
         :return:
         """
-        encrypted = encrypt(identifier)
-    def get_from_erfpacht(self, identifier, kind):
         assert kind in ['user', 'company']
         encrypted = encrypt(identifier)
         encoded_encryption = base64.urlsafe_b64encode(
