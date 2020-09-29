@@ -16,7 +16,6 @@ class MijnErfpachtConnection:
         :param identifier: BSN or KVK number
         :return:
         """
-        assert kind in ['user', 'company']
         encrypted = encrypt(identifier)
         encoded_encryption = base64.urlsafe_b64encode(
             encrypted).decode('ASCII')
@@ -47,6 +46,7 @@ class MijnErfpachtConnection:
         # Encrypt and decode the bsn
         # Check the MijnErfpacht API if the BSN has erfpacht
         # Handle forbidden response
+        assert kind in ['user', 'company']
         res = self.get_from_erfpacht(identifier, kind)
 
         if res.status_code == 403:
