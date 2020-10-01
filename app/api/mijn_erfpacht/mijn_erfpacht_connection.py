@@ -77,7 +77,9 @@ class MijnErfpachtConnection:
         url = f'{API_URL}/api/notifications/{kind}'
 
         res = self._make_request(url, identifier)
-        res_json = res.json
+        if res.status_code == 204:
+            return {}, 204
+        res_json = res.json()
         return {
             'status': 'OK',
             'content': res_json,

@@ -19,7 +19,37 @@ MijnErfpachtConnectionLocation = 'api.mijn_erfpacht.mijn_erfpacht_connection.Mij
 class ApiMock:
     status_code = 200
     text = "{}"
-    json = {}
+
+    def json(self):
+        return [
+            {
+                'title': 'Nieuwe factuur met nummer 2',
+                'description': 'Nieuwe factuur met nummer 2',
+                'datePublished': '2020-09-02',
+                'link': {
+                    'title': 'Nieuwe factuur met nummer 2',
+                    'to': '/page/groundleases/detail?id=E1/1'
+                }
+            },
+            {
+                'title': 'Nieuwe factuur met nummer 3',
+                'description': 'Nieuwe factuur met nummer 3',
+                'datePublished': '2020-08-05',
+                'link': {
+                    'title': 'Nieuwe factuur met nummer 3',
+                    'to': '/page/groundleases/detail?id=E1/1'
+                }
+            },
+            {
+                'title': 'Nieuwe factuur met nummer 4',
+                'description': 'Nieuwe factuur met nummer 4',
+                'datePublished': '2020-07-09',
+                'link': {
+                    'title': 'Nieuwe factuur met nummer 4',
+                    'to': '/page/groundleases/detail?id=E1/1'
+                }
+            }
+        ]
 
 
 class TestAPI(FlaskServerTMATestCase):
@@ -44,5 +74,8 @@ class TestAPI(FlaskServerTMATestCase):
         SAML_HEADERS = self.add_digi_d_headers(self.TEST_BSN)
         res = self.client.get(self.ERFPACHT_MELDINGEN_URL, headers=SAML_HEADERS)
 
-        # print(res.json)
         self.assertEqual(res.status_code, 200)
+
+        res_json = res.json
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res_json['content']), 3)
