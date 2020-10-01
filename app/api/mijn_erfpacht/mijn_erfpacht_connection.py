@@ -63,7 +63,7 @@ class MijnErfpachtConnection:
                 'The source API responded with 4xx status code, ' +
                 'saying: {}'.format(res.text))
 
-        return {'status': res.text == "true"}
+        return res.text == "true"
 
     def get_notifications_bsn(self, bsn):
         return self.get_notifications(bsn, 'bsn')
@@ -78,9 +78,6 @@ class MijnErfpachtConnection:
 
         res = self._make_request(url, identifier)
         if res.status_code == 204:
-            return {}, 204
+            return []
         res_json = res.json()
-        return {
-            'status': 'OK',
-            'content': res_json,
-        }
+        return res_json

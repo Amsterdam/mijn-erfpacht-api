@@ -21,6 +21,37 @@ class ApiMock:
     status_code = 200
     text = "true"
 
+    def json(self):
+        return [
+            {
+                'title': 'Nieuwe factuur met nummer 2',
+                'description': 'Nieuwe factuur met nummer 2',
+                'datePublished': '2020-09-02',
+                'link': {
+                    'title': 'Nieuwe factuur met nummer 2',
+                    'to': '/page/groundleases/detail?id=E1/1'
+                }
+            },
+            {
+                'title': 'Nieuwe factuur met nummer 3',
+                'description': 'Nieuwe factuur met nummer 3',
+                'datePublished': '2020-08-05',
+                'link': {
+                    'title': 'Nieuwe factuur met nummer 3',
+                    'to': '/page/groundleases/detail?id=E1/1'
+                }
+            },
+            {
+                'title': 'Nieuwe factuur met nummer 4',
+                'description': 'Nieuwe factuur met nummer 4',
+                'datePublished': '2020-07-09',
+                'link': {
+                    'title': 'Nieuwe factuur met nummer 4',
+                    'to': '/page/groundleases/detail?id=E1/1'
+                }
+            }
+        ]
+
 
 class TestAPI(FlaskServerTMATestCase):
 
@@ -48,23 +79,27 @@ class TestAPI(FlaskServerTMATestCase):
         res = self.client.get(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
 
         self.assertEqual(res.status_code, 200, res.data)
-        self.assertEqual(res.json, {"status": True})
+        content = res.json['content']
+        self.assertEqual(content['isKnown'], True)
+        self.assertEqual(len(content['meldingen']), 3)
 
         test_bsn_encrypted = base64.urlsafe_b64encode(encrypt(self.TEST_BSN)).decode('ASCII')
-        call_bsn_encrypted = api_mocked.call_args[0][0].lstrip(os.environ['MIJN_ERFPACHT_API_URL'])
+        call_bsn_encrypted = api_mocked.call_args_list[0][0][0].lstrip(os.environ['MIJN_ERFPACHT_API_URL'])
 
         # check mock if the bsn is encrypted
         self.assertEqual(call_bsn_encrypted, f"/api/check/groundlease/user/{test_bsn_encrypted}")
 
     @patch(MijnErfpachtConnectionLocation + '.check_erfpacht', autospec=True)
+    @patch(MijnErfpachtConnectionLocation + '.get_notifications', autospec=True)
     @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
-    def test_get_check_erfpacht(self, mocked_method):
+    def test_get_check_erfpacht(self, mocked_check_meldingen, mocked_check_erfpacht):
         """
         Test if getting is allowed, if the SAML token is correctly decoded
         and if the MijnErfpachtConnection is called
         """
         # Mock the MijnErfpacht response
-        mocked_method.return_value = 'true'
+        mocked_check_erfpacht.return_value = 'true'
+        mocked_check_meldingen.return_value = ApiMock().json()
 
         # Create SAML headers
         SAML_HEADERS = self.add_digi_d_headers(self.TEST_BSN)
@@ -77,17 +112,19 @@ class TestAPI(FlaskServerTMATestCase):
 
         # Check if the mocked method got called with the expected args
         # ANY covers the self argument
-        mocked_method.assert_called_once_with(ANY, self.TEST_BSN, 'user')
+        mocked_check_erfpacht.assert_called_once_with(ANY, self.TEST_BSN, 'user')
 
     @patch(MijnErfpachtConnectionLocation + '.check_erfpacht', autospec=True)
+    @patch(MijnErfpachtConnectionLocation + '.get_notifications', autospec=True)
     @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
-    def test_get_check_erfpacht_kvk(self, mocked_method):
+    def test_get_check_erfpacht_kvk(self, mocked_check_meldingen, mocked_check_erfpacht):
         """
         Test if getting is allowed, if the SAML token is correctly decoded
         and if the MijnErfpachtConnection is called
         """
         # Mock the MijnErfpacht response
-        mocked_method.return_value = 'true'
+        mocked_check_erfpacht.return_value = 'true'
+        mocked_check_meldingen.return_value = ApiMock().json()
 
         # Create SAML headers
         SAML_HEADERS = self.add_e_herkenning_headers(self.TEST_KVK)
@@ -100,7 +137,7 @@ class TestAPI(FlaskServerTMATestCase):
 
         # Check if the mocked method got called with the expected args
         # ANY covers the self argument
-        mocked_method.assert_called_once_with(ANY, self.TEST_KVK, 'company')
+        mocked_check_erfpacht.assert_called_once_with(ANY, self.TEST_KVK, 'company')
 
     @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
     def test_get_check_erfpacht_invalid_saml(self):

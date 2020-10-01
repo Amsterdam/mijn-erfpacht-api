@@ -82,56 +82,36 @@ class ErfpachtCheck(Resource):
             required=True,
             help='SAML token required'
         )
-        kvk_nummer = None
+        kind = None
+        identifier = None
 
         try:
-            kvk_nummer = get_kvk_number_from_request(request)
-            return con.check_erfpacht_kvk(kvk_nummer)
+            identifier = get_kvk_number_from_request(request)
+            kind = 'kvk'
         except SamlVerificationException:
             return {'status': 'ERROR', 'message': 'Missing SAML token'}, 400
         except KeyError:
             # does not contain kvk number, might still contain BSN
             pass
 
-        bsn = get_bsn_from_request(request)
-        return con.check_erfpacht_bsn(bsn)
+        if not identifier:
+            identifier = get_bsn_from_request(request)
+            kind = 'bsn'
 
+        if kind == 'bsn':
+            has_erfpacht = con.check_erfpacht_bsn(identifier)
+            notifications = con.get_notifications_bsn(identifier)
+        elif kind == 'kvk':
+            has_erfpacht = con.check_erfpacht_kvk(identifier)
+            notifications = con.get_notifications_kvk(identifier)
 
-class ErfpachtNotifications(Resource):
-    """ Class representing the 'api/erfpacht/meldingen' endpoint"""
-
-    def get(self):
-        """
-        Check if a citizen has meldingen based on a BSN/KVK
-        ---
-        responses:
-          200:
-            description: Erfpacht successfully checked
-            type: boolean
-            example: True
-          400:
-            description: Invalid SAML or BSN
-        """
-        parser = reqparse.RequestParser()
-        token_arg_name = 'x-saml-attribute-token1'
-        parser.add_argument(
-            token_arg_name,
-            location='headers',
-            required=True,
-            help='SAML token required'
-        )
-
-        try:
-            kvk_nummer = get_kvk_number_from_request(request)
-            return con.get_notifications_kvk(kvk_nummer)
-        except SamlVerificationException:
-            return {'status': 'ERROR', 'message': 'Missing SAML token'}, 400
-        except KeyError:
-            # does not contain kvk number, might still contain BSN
-            pass
-
-        bsn = get_bsn_from_request(request)
-        return con.get_notifications_bsn(bsn)
+        return {
+            "status": "OK",
+            "content": {
+                "isKnown": has_erfpacht,
+                "meldingen": notifications,
+            },
+        }
 
 
 class Health(Resource):
@@ -143,7 +123,6 @@ class Health(Resource):
 
 # Add resources to the api
 api.add_resource(ErfpachtCheck, '/api/erfpacht/check-erfpacht')
-api.add_resource(ErfpachtNotifications, '/api/erfpacht/meldingen')
 api.add_resource(Health, '/status/health')
 
 if __name__ == '__main__':
