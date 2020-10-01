@@ -48,7 +48,7 @@ class MijnErfpachtConnection:
         # Handle forbidden response
         assert kind in ['user', 'company']
         url = f'{API_URL}/api/check/groundlease/{kind}'
-        res = self._make_request(identifier, kind)
+        res = self._make_request(url, identifier)
 
         if res.status_code == 403:
             raise Exception(
@@ -77,7 +77,8 @@ class MijnErfpachtConnection:
         url = f'{API_URL}/api/notifications/{kind}'
 
         res = self._make_request(url, identifier)
+        res_json = res.json
         return {
             'status': 'OK',
-            'content': res,
+            'content': res_json,
         }
