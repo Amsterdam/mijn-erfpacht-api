@@ -1,5 +1,7 @@
 #!groovy
 
+String CONTAINERNAME = "mijnams/erfpacht"
+
 def tryStep(String message, Closure block, Closure tearDown = null) {
     try {
         block()
@@ -16,6 +18,13 @@ def tryStep(String message, Closure block, Closure tearDown = null) {
     }
 }
 
+def retagAndPush(String imageName, String newTag)
+{
+    def regex = ~"^https?://"
+    def dockerReg = "${DOCKER_REGISTRY_HOST}" - regex
+    sh "docker tag ${dockerReg}/${imageName}:${env.BUILD_NUMBER} ${dockerReg}/${imageName}:${newTag}"
+    sh "docker push ${dockerReg}/${imageName}:${newTag}"
+}
 
 node {
     stage("Checkout") {
@@ -34,7 +43,7 @@ node {
     stage("Build image") {
         tryStep "build", {
             docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                def image = docker.build("mijnams/erfpacht:${env.BUILD_NUMBER}", "app")
+                def image = docker.build("${CONTAINERNAME}:${env.BUILD_NUMBER}", "app")
                 image.push()
             }
         }
@@ -49,9 +58,11 @@ if (BRANCH == "master") {
         stage('Push acceptance image') {
             tryStep "image tagging", {
                 docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                    def image = docker.image("mijnams/erfpacht:${env.BUILD_NUMBER}")
-                    image.pull()
-                    image.push("acceptance")
+                    docker.image("${CONTAINERNAME}:${env.BUILD_NUMBER}").pull()
+                    // The Image.push() function ignores the docker registry prefix of the image name,
+                    // which means that we cannot re-tag an image that was built in a different stage (on a different node).
+                    // Resort to manual tagging to allow build and tag steps to run on different Jenkins slaves.
+                    retagAndPush("${CONTAINERNAME}", "acceptance")
                 }
             }
         }
@@ -80,9 +91,9 @@ if (BRANCH == "master") {
             tryStep "image tagging", {
                 docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
                     def image = docker.image("mijnams/erfpacht:${env.BUILD_NUMBER}")
-                    image.pull()
-                    image.push("production")
-                    image.push("latest")
+                    docker.image("${CONTAINERNAME}:${env.BUILD_NUMBER}").pull()
+                    retagAndPush("${CONTAINERNAME}", "production")
+                    retagAndPush("${CONTAINERNAME}", "latest")
                 }
             }
         }
