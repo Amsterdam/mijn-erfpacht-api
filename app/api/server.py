@@ -98,12 +98,15 @@ class ErfpachtCheck(Resource):
             identifier = get_bsn_from_request(request)
             kind = 'bsn'
 
+        notifications = []
         if kind == 'bsn':
             has_erfpacht = con.check_erfpacht_bsn(identifier)
-            notifications = con.get_notifications_bsn(identifier)
+            if has_erfpacht:
+                notifications = con.get_notifications_bsn(identifier)
         elif kind == 'kvk':
             has_erfpacht = con.check_erfpacht_kvk(identifier)
-            notifications = con.get_notifications_kvk(identifier)
+            if has_erfpacht:
+                notifications = con.get_notifications_kvk(identifier)
 
         return {
             "status": "OK",
