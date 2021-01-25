@@ -11,7 +11,7 @@ from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
 from api.tma_utils import get_bsn_from_request, get_kvk_number_from_request
 
 # Check the environment, will raise an exception if the server is not supplied with sufficient info
-from requests import Timeout
+from requests import Timeout, ConnectionError
 from sentry_sdk.integrations.flask import FlaskIntegration
 from tma_saml import SamlVerificationException, InvalidBSNException
 
@@ -126,6 +126,8 @@ class ErfpachtCheck(Resource):
             has_erfpacht, notifications = get_data(kind, identifier)
         except Timeout:
             return {'status': 'ERROR', 'message': 'Timeout'}, 500
+        except ConnectionError as e:
+            logger.error(f"ConenctionError {e}")
         except Exception as e:
             logger.error(f"Unkown error {type(e)}")
             return {'status': 'ERROR', 'message': 'Unknown error'}, 500
