@@ -129,7 +129,7 @@ class ErfpachtCheck(Resource):
         except ConnectionError as e:
             logger.error(f"ConenctionError {e}")
         except Exception as e:
-            logger.error(f"Unkown error {type(e)}")
+            logger.exception(e)
             return {'status': 'ERROR', 'message': 'Unknown error'}, 500
 
         return {
