@@ -83,7 +83,7 @@ def get_data(kind, identifier):
 class ErfpachtCheck(Resource):
     """ Class representing the 'api/erfpacht/check-erfpacht' endpoint"""
 
-    def get(self):
+    def get(self):  # noqa: C901
         """
         Check if a person or company has erfpacht based on a BSN/KVK
         ---
@@ -109,7 +109,7 @@ class ErfpachtCheck(Resource):
         try:
             identifier = get_kvk_number_from_request(request)
             kind = 'kvk'
-        except SamlVerificationException as e:
+        except SamlVerificationException:
             return {'status': 'ERROR', 'message': 'Missing SAML token'}, 400
         except KeyError:
             # does not contain kvk number, might still contain BSN

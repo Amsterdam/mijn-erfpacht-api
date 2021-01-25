@@ -212,7 +212,6 @@ class TestAPI(FlaskServerTMATestCase):
         self.assertEqual(res.status_code, 500)
         self.assertEqual(res.json, {"status": "ERROR", "message": "Timeout"})
 
-
     # ============================
     # Test miscellaneous endpoints
     # ============================

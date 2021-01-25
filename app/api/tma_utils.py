@@ -1,6 +1,5 @@
 import os
 
-from flask_restful import abort
 from tma_saml import get_digi_d_bsn, get_e_herkenning_attribs, HR_KVK_NUMBER_KEY
 
 
