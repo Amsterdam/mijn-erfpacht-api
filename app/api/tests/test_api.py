@@ -2,6 +2,7 @@ import base64
 import os
 from unittest.mock import patch, ANY
 
+from requests import Timeout
 from tma_saml import FlaskServerTMATestCase
 from tma_saml.for_tests.cert_and_key import server_crt
 
@@ -159,6 +160,7 @@ class TestAPI(FlaskServerTMATestCase):
 
         # Check response code
         self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json, {'message': 'Missing SAML token', 'status': 'ERROR'})
 
     @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
     def test_get_check_erfpacht_invalid_bsn(self):
@@ -171,6 +173,7 @@ class TestAPI(FlaskServerTMATestCase):
 
         # Check response code
         self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.json, {'message': 'Invalid BSN', 'status': 'ERROR'})
 
     def test_update_check_erfpacht(self):
         """ Test if updating is not allowed """
@@ -197,6 +200,18 @@ class TestAPI(FlaskServerTMATestCase):
 
         res = self.client.delete(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
         self.assertEqual(res.status_code, 405)
+
+    # raise the requests' Timeout Exception
+    @patch('api.mijn_erfpacht.mijn_erfpacht_connection.requests.get', side_effect=Timeout)
+    @patch('api.tma_utils.get_tma_certificate', lambda: server_crt)
+    def test_timeout(self, timeout_mock):
+        """ Test the response when the connection times out """
+        SAML_HEADERS = self.add_e_herkenning_headers(self.TEST_KVK)
+
+        res = self.client.get(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
+        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.json, {"status": "ERROR", "message": "Timeout"})
+
 
     # ============================
     # Test miscellaneous endpoints

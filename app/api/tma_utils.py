@@ -12,10 +12,7 @@ def get_bsn_from_request(request):
     tma_certificate = get_tma_certificate()
 
     # Decode the BSN from the request with the TMA certificate
-    try:
-        bsn = get_digi_d_bsn(request, tma_certificate)
-    except Exception as e:
-        abort(400, message=e)
+    bsn = get_digi_d_bsn(request, tma_certificate)
     return bsn
 
 

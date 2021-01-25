@@ -1,3 +1,5 @@
+import logging
+
 import sentry_sdk
 from flask import Flask, request
 from flask_cors import CORS
@@ -9,8 +11,9 @@ from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
 from api.tma_utils import get_bsn_from_request, get_kvk_number_from_request
 
 # Check the environment, will raise an exception if the server is not supplied with sufficient info
+from requests import Timeout
 from sentry_sdk.integrations.flask import FlaskIntegration
-from tma_saml import SamlVerificationException
+from tma_saml import SamlVerificationException, InvalidBSNException
 
 check_env()
 
@@ -25,6 +28,8 @@ if SENTRY_DSN:
         integrations=[FlaskIntegration()],
         with_locals=True
     )
+
+logger = logging.getLogger(__name__)
 
 """
 Info about Swagger
@@ -59,6 +64,22 @@ swagger = Swagger(app, config=swagger_config)
 con = MijnErfpachtConnection()
 
 
+def get_data(kind, identifier):
+    has_erfpacht = False
+    notifications = []
+
+    if kind == 'bsn':
+        has_erfpacht = con.check_erfpacht_bsn(identifier)
+        if has_erfpacht:
+            notifications = con.get_notifications_bsn(identifier)
+    elif kind == 'kvk':
+        has_erfpacht = con.check_erfpacht_kvk(identifier)
+        if has_erfpacht:
+            notifications = con.get_notifications_kvk(identifier)
+
+    return has_erfpacht, notifications
+
+
 class ErfpachtCheck(Resource):
     """ Class representing the 'api/erfpacht/check-erfpacht' endpoint"""
 
@@ -88,25 +109,26 @@ class ErfpachtCheck(Resource):
         try:
             identifier = get_kvk_number_from_request(request)
             kind = 'kvk'
-        except SamlVerificationException:
+        except SamlVerificationException as e:
             return {'status': 'ERROR', 'message': 'Missing SAML token'}, 400
         except KeyError:
             # does not contain kvk number, might still contain BSN
             pass
 
         if not identifier:
-            identifier = get_bsn_from_request(request)
+            try:
+                identifier = get_bsn_from_request(request)
+            except InvalidBSNException:
+                return {'status': 'ERROR', 'message': 'Invalid BSN'}, 400
             kind = 'bsn'
 
-        notifications = []
-        if kind == 'bsn':
-            has_erfpacht = con.check_erfpacht_bsn(identifier)
-            if has_erfpacht:
-                notifications = con.get_notifications_bsn(identifier)
-        elif kind == 'kvk':
-            has_erfpacht = con.check_erfpacht_kvk(identifier)
-            if has_erfpacht:
-                notifications = con.get_notifications_kvk(identifier)
+        try:
+            has_erfpacht, notifications = get_data(kind, identifier)
+        except Timeout:
+            return {'status': 'ERROR', 'message': 'Timeout'}, 500
+        except Exception as e:
+            logger.error(f"Unkown error {type(e)}")
+            return {'status': 'ERROR', 'message': 'Unknown error'}, 500
 
         return {
             "status": "OK",
