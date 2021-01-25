@@ -127,7 +127,7 @@ class ErfpachtCheck(Resource):
         except Timeout:
             return {'status': 'ERROR', 'message': 'Timeout'}, 500
         except ConnectionError as e:
-            logger.error(f"ConenctionError {e}")
+            logger.error(f"ConnectionError {e}")
         except Exception as e:
             logger.exception(e)
             return {'status': 'ERROR', 'message': 'Unknown error'}, 500
