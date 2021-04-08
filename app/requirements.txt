@@ -1,4 +1,3 @@
---extra-index-url https://nexus.secure.amsterdam.nl/repository/pypi-hosted/simple
 aniso8601==8.1.0
 attrs==20.3.0
 blinker==1.4
