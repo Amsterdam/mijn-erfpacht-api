@@ -38,5 +38,7 @@ def decrypt(encrypted, iv):
             "No encryption key found in environment variables or key is None/empty string"
         )
 
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    return unpad(cipher.decrypt(encrypted), AES.block_size)
+    encryption_key = bytes(key, "utf-8")
+
+    cipher = AES.new(encryption_key, AES.MODE_CBC, iv)
+    return unpad(cipher.decrypt(encrypted), AES.block_size).decode("utf-8")
