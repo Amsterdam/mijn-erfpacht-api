@@ -29,6 +29,6 @@ def get_kvk_number_from_request(request):
 
 
 def get_tma_certificate():
-    tma_cert_location = os.getenv('TMA_CERTIFICATE')
+    tma_cert_location = os.getenv("TMA_CERTIFICATE")
     with open(tma_cert_location) as f:
         return f.read()
