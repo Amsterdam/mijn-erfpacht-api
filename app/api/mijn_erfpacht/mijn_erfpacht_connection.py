@@ -43,7 +43,7 @@ class MijnErfpachtConnection:
         # Check the MijnErfpacht API if the BSN has erfpacht
         # Handle forbidden response
         assert kind in ["user", "company"]
-        url = f"{API_URL}/api/check/groundlease/{kind}"
+        url = f"{API_URL}/api/v2/check/groundlease/{kind}"
         res = self._make_request(url, identifier)
 
         if res.status_code == 403:
