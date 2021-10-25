@@ -1,19 +1,19 @@
 import logging
 
 import sentry_sdk
+from flasgger import Swagger
 from flask import Flask, request
 from flask_cors import CORS
-from flask_restful import Resource, Api, reqparse
-from flasgger import Swagger
-
-from api.config import check_env, SENTRY_DSN
-from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
-from api.tma_utils import get_bsn_from_request, get_kvk_number_from_request
+from flask_restful import Api, Resource, reqparse
 
 # Check the environment, will raise an exception if the server is not supplied with sufficient info
-from requests import Timeout, ConnectionError
+from requests import ConnectionError, Timeout
 from sentry_sdk.integrations.flask import FlaskIntegration
-from tma_saml import SamlVerificationException, InvalidBSNException
+from tma_saml import InvalidBSNException, SamlVerificationException
+
+from api.config import SENTRY_DSN, check_env
+from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
+from api.tma_utils import get_bsn_from_request, get_kvk_number_from_request
 
 check_env()
 
