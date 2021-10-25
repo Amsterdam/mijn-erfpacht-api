@@ -24,8 +24,7 @@ class MijnErfpachtConnection:
 
         (encrypted, iv) = encrypt(identifier)
         encoded_encryption = base64.urlsafe_b64encode(encrypted).decode("ASCII")
-
-        headers = {"X-API-KEY": key, "X-RANDOM-IV": iv}
+        headers = {"X-API-KEY": key, "X-RANDOM-IV": str(iv).encode("utf-8")}
         res = requests.get(f"{url}/{encoded_encryption}", headers=headers, timeout=9)
         return res
 
