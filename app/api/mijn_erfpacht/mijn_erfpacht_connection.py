@@ -20,8 +20,7 @@ class MijnErfpachtConnection:
         key = credentials["API_KEY"]
         if not key:
             raise Exception(
-                "No api key found in environment variables or key "
-                + "is None/empty string"
+                "No api key found in environment variables or key is None/empty string"
             )
 
         (encrypted, iv) = encrypt(identifier)
@@ -48,17 +47,18 @@ class MijnErfpachtConnection:
 
         if res.status_code == 403:
             raise Exception(
-                "Unable to authenticate to source API. "
-                + "Check if the provided api key is correct and if you are "
-                + "making the request through a whitelisted "
-                + "environment (e.g. secure VPN)."
+                """Unable to authenticate to source API. 
+                Check if the provided api key is correct and if 
+                you are making the request through a 
+                whitelisted environment (e.g. secure VPN)."""
             )
 
         # Handle 400 range responses
         if str(res.status_code)[0] == "4":
             raise Exception(
-                "The source API responded with 4xx status code, "
-                + "saying: {}".format(res.text)
+                "The source API responded with 4xx status code, saying: {}".format(
+                    res.text
+                )
             )
 
         return res.text == "true"
