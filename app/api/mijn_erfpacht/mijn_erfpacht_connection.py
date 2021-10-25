@@ -47,10 +47,7 @@ class MijnErfpachtConnection:
 
         if res.status_code == 403:
             raise Exception(
-                """Unable to authenticate to source API. 
-                Check if the provided api key is correct and if 
-                you are making the request through a 
-                whitelisted environment (e.g. secure VPN)."""
+                "Unable to authenticate to source API. Check if the provided api key is correct and if you are making the request through a whitelisted environment (e.g. secure VPN)."
             )
 
         # Handle 400 range responses
