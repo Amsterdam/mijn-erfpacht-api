@@ -75,7 +75,7 @@ class MijnErfpachtConnection:
         return response.text == "true"
 
     def get_notifications_v1(self, identifier, user_type):
-        assert user_type in ["user", "company"]
+        assert user_type in ["bsn", "kvk"]
 
         (payload, iv) = get_encrypted_payload(identifier, version=1)
         url = self.get_api_url(
