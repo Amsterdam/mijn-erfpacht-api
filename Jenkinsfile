@@ -32,8 +32,8 @@ node {
     stage('Test') {
         tryStep "test", {
             docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                docker.build("mijnams/mijn-erfpacht:${env.BUILD_NUMBER}")
-                sh "docker run --rm mijnams/mijn-erfpacht:${env.BUILD_NUMBER} /app/test.sh"
+                docker.build("mijnams/erfpacht:${env.BUILD_NUMBER}")
+                sh "docker run --rm mijnams/erfpacht:${env.BUILD_NUMBER} /app/test.sh"
             }
         }
     }
@@ -42,7 +42,7 @@ node {
     stage("Build image") {
         tryStep "build", {
             docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                def image = docker.build("mijnams/mijn-erfpacht:${env.BUILD_NUMBER}")
+                def image = docker.build("mijnams/erfpacht:${env.BUILD_NUMBER}")
                 image.push()
             }
         }
@@ -57,11 +57,11 @@ if (BRANCH == "test-acc") {
         stage('Push acceptance image') {
             tryStep "image tagging", {
                 docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                    docker.image("mijnams/mijn-erfpacht:${env.BUILD_NUMBER}").pull()
+                    docker.image("mijnams/erfpacht:${env.BUILD_NUMBER}").pull()
                     // The Image.push() function ignores the docker registry prefix of the image name,
                     // which means that we cannot re-tag an image that was built in a different stage (on a different node).
                     // Resort to manual tagging to allow build and tag steps to run on different Jenkins slaves.
-                    retagAndPush("mijnams/mijn-erfpacht", "${env.BUILD_NUMBER}", "acceptance")
+                    retagAndPush("mijnams/erfpacht", "${env.BUILD_NUMBER}", "acceptance")
                 }
             }
         }
@@ -87,11 +87,11 @@ if (BRANCH == "master") {
         stage('Push acceptance image') {
             tryStep "image tagging", {
                 docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                    docker.image("mijnams/mijn-erfpacht:${env.BUILD_NUMBER}").pull()
+                    docker.image("mijnams/erfpacht:${env.BUILD_NUMBER}").pull()
                     // The Image.push() function ignores the docker registry prefix of the image name,
                     // which means that we cannot re-tag an image that was built in a different stage (on a different node).
                     // Resort to manual tagging to allow build and tag steps to run on different Jenkins slaves.
-                    retagAndPush("mijnams/mijn-erfpacht", "${env.BUILD_NUMBER}", "acceptance")
+                    retagAndPush("mijnams/erfpacht", "${env.BUILD_NUMBER}", "acceptance")
                 }
             }
         }
@@ -111,7 +111,7 @@ if (BRANCH == "master") {
     }
 
     stage('Waiting for approval') {
-        slackSend channel: '#ci-channel', color: 'warning', message: 'mijn-erfpacht-api is waiting for Production Release - please confirm'
+        slackSend channel: '#ci-channel', color: 'warning', message: 'erfpacht-api is waiting for Production Release - please confirm'
         input "Deploy to Production?"
     }
 
@@ -119,9 +119,9 @@ if (BRANCH == "master") {
         stage('Push production image') {
             tryStep "image tagging", {
                 docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                    docker.image("mijnams/mijn-erfpacht:${env.BUILD_NUMBER}").pull()
-                    retagAndPush("mijnams/mijn-erfpacht", "${env.BUILD_NUMBER}", "production")
-                    retagAndPush("mijnams/mijn-erfpacht", "${env.BUILD_NUMBER}", "latest")
+                    docker.image("mijnams/erfpacht:${env.BUILD_NUMBER}").pull()
+                    retagAndPush("mijnams/erfpacht", "${env.BUILD_NUMBER}", "production")
+                    retagAndPush("mijnams/erfpacht", "${env.BUILD_NUMBER}", "latest")
                 }
             }
         }
