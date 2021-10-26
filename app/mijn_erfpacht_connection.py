@@ -61,7 +61,7 @@ class MijnErfpachtConnection:
 
         return f"{API_URL}/api{version}/{operation}/{user_type}/{payload}"
 
-    ## Initial encryption
+    # Initial encryption
     def check_erfpacht_bsn_v1(self, bsn):
         (payload, iv) = get_encrypted_payload(bsn, version=1)
         url = self.get_api_url(payload, version=1)
@@ -95,7 +95,7 @@ class MijnErfpachtConnection:
     def get_notifications_kvk_v1(self, kvk_number):
         return self.get_notifications_v1(kvk_number, "company")
 
-    ## Proper encryption with correct IV implementation
+    # Proper encryption with correct IV implementation
     def check_erfpacht_bsn(self, bsn):
         (payload, iv) = get_encrypted_payload(bsn)
         url = self.get_api_url(payload)
