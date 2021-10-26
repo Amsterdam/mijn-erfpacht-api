@@ -20,5 +20,4 @@ COPY /.flake8 /
 
 RUN pip install --no-cache-dir -r ./requirements.txt
 
-#ENTRYPOINT ["uwsgi"]
 CMD uwsgi --ini ./uwsgi.ini
