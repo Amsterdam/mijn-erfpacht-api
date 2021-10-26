@@ -13,6 +13,8 @@ API_URL = os.getenv("MIJN_ERFPACHT_API_URL")
 
 logger = logging.getLogger(__name__)
 
+ERFPACHT_API_REQUEST_TIMEOUT = 9
+
 
 def check_env():
     """

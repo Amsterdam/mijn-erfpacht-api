@@ -1,50 +1,29 @@
 import base64
 
 import requests
-from app.config import API_URL, credentials, logger
-from app.utils import encrypt
+from app.config import API_URL, ERFPACHT_API_REQUEST_TIMEOUT, credentials, logger
+from app.utils import get_encrypted_payload
 
 
 class MijnErfpachtConnection:
     """This helper class represents the connection to the MijnErfpacht API"""
 
-    def _make_request(self, url: str, identifier: str):
-        """
-        Make a request to url with the encrypted identifier concatted at the end.
-        :param url:
-        :param identifier: BSN or KVK number
-        :return:
-        """
-        # Get the api key from env
+    def send_request(self, url, additional_headers):
+        """Check for erfpacht at MijnErfpacht based on a BSN"""
+
         key = credentials["API_KEY"]
         if not key:
             raise Exception(
                 "No api key found in environment variables or key is None/empty string"
             )
 
-        (encrypted, iv) = encrypt(identifier)
-        encoded_encryption = base64.urlsafe_b64encode(encrypted).decode("ASCII")
-        headers = {"X-API-KEY": key, "X-RANDOM-IV": str(iv).encode("utf-8")}
-        res = requests.get(f"{url}/{encoded_encryption}", headers=headers, timeout=9)
+        headers = {"X-API-KEY": key}
+        if additional_headers:
+            headers.update(additional_headers)
 
-        logger.debug(res)
+        res = requests.get(url, headers=headers, timeout=ERFPACHT_API_REQUEST_TIMEOUT)
 
-        return res
-
-    def check_erfpacht_bsn(self, bsn):
-        return self.check_erfpacht(bsn, "user")
-
-    def check_erfpacht_kvk(self, kvk_nummer):
-        return self.check_erfpacht(kvk_nummer, "company")
-
-    def check_erfpacht(self, identifier, kind="user"):
-        """Check for erfpacht at MijnErfpacht based on a BSN"""
-        # Encrypt and decode the bsn
-        # Check the MijnErfpacht API if the BSN has erfpacht
-        # Handle forbidden response
-        assert kind in ["user", "company"]
-        url = f"{API_URL}/api/v2/check/groundlease/{kind}"
-        res = self._make_request(url, identifier)
+        logger.debug("Response status: {}, text: {}".format(res.status_code, res.text))
 
         if res.status_code == 403:
             raise Exception(
@@ -59,21 +38,91 @@ class MijnErfpachtConnection:
                 )
             )
 
-        return res.text == "true"
+        return res
+
+    def get_iv_header(self, iv):
+        return {"X-RANDOM-IV": base64.urlsafe_b64encode(iv).decode("ASCII")}
+
+    def get_api_url(
+        self,
+        encrypted_payload,
+        version=2,
+        user_type="user",
+        operation="check/groundlease",
+    ):
+        assert user_type in ["user", "company"]
+
+        payload = base64.urlsafe_b64encode(encrypted_payload).decode("ASCII")
+
+        if version != 1:
+            version = "/v{version}"
+        else:
+            version = ""
+
+        return f"{API_URL}/api{version}/{operation}/{user_type}/{payload}"
+
+    ## Initial encryption
+    def check_erfpacht_bsn_v1(self, bsn):
+        (payload, iv) = get_encrypted_payload(bsn, version=1)
+        url = self.get_api_url(payload, version=1)
+        response = self.send_request(url)
+        return response.text == "true"
+
+    def check_erfpacht_kvk_v1(self, kvk_nummer):
+        (payload, iv) = get_encrypted_payload(kvk_nummer, version=1)
+        url = self.get_api_url(payload, version=1, user_type="company")
+        response = self.send_request(url)
+        return response.text == "true"
+
+    def get_notifications_v1(self, identifier, user_type):
+        assert user_type in ["user", "company"]
+
+        (payload, iv) = get_encrypted_payload(identifier, version=1)
+        url = self.get_api_url(
+            payload, user_type=user_type, operation="notifications", version=1
+        )
+
+        response = self.send_request(url)
+
+        if response.status_code == 204:
+            return []
+
+        return response.json()
+
+    def get_notifications_bsn_v1(self, bsn):
+        return self.get_notifications_v1(bsn, "user")
+
+    def get_notifications_kvk_v1(self, kvk_number):
+        return self.get_notifications_v1(kvk_number, "company")
+
+    ## Proper encryption with correct IV implementation
+    def check_erfpacht_bsn(self, bsn):
+        (payload, iv) = get_encrypted_payload(bsn)
+        url = self.get_api_url(payload)
+        response = self.send_request(url, self.get_iv_header(iv))
+        return response.text == "true"
+
+    def check_erfpacht_kvk(self, kvk_nummer):
+        (payload, iv) = get_encrypted_payload(kvk_nummer)
+        url = self.get_api_url(payload, user_type="company")
+        response = self.send_request(url, self.get_iv_header(iv))
+        return response.text == "true"
+
+    def get_notifications(self, identifier, user_type):
+        assert user_type in ["user", "company"]
+
+        (payload, iv) = get_encrypted_payload(identifier)
+        url = self.get_api_url(payload, user_type=user_type, operation="notifications")
+
+        response = self.send_request(url, self.get_iv_header(iv))
+
+        if response.status_code == 204:
+            return []
+
+        return response.json()
 
     def get_notifications_bsn(self, bsn):
-        return self.get_notifications(bsn, "bsn")
+        return self.get_notifications(bsn, "user")
 
     def get_notifications_kvk(self, kvk_number):
-        return self.get_notifications(kvk_number, "kvk")
-
-    def get_notifications(self, identifier, kind):
-        assert kind in ["bsn", "kvk"]
-
-        url = f"{API_URL}/api/notifications/{kind}"
-
-        res = self._make_request(url, identifier)
-        if res.status_code == 204:
-            return []
-        res_json = res.json()
-        return res_json
+        return self.get_notifications(kvk_number, "company")

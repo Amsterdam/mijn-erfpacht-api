@@ -1,5 +1,7 @@
+import base64
+import logging
 import os
-from unittest.mock import ANY, patch
+from unittest.mock import patch
 
 from requests import Timeout
 from tma_saml import FlaskServerTMATestCase
@@ -14,10 +16,9 @@ MOCK_ENV_VARIABLES = {
 }
 
 with patch.dict(os.environ, MOCK_ENV_VARIABLES):
+    from app.config import logger
     from app.utils import decrypt, encrypt
     from app.server import app
-
-MijnErfpachtConnectionLocation = "app.mijn_erfpacht_connection.MijnErfpachtConnection"
 
 
 class ApiMock:
@@ -65,6 +66,7 @@ class TestAPI(FlaskServerTMATestCase):
     def setUp(self):
         """Setup app for testing"""
         self.client = self.get_tma_test_app(app)
+        logger.setLevel(logging.DEBUG)
         return app
 
     # =================================
@@ -86,16 +88,25 @@ class TestAPI(FlaskServerTMATestCase):
         self.assertEqual(content["isKnown"], True)
         self.assertEqual(len(content["meldingen"]), 3)
 
-    @patch(MijnErfpachtConnectionLocation + ".check_erfpacht", autospec=True)
-    @patch(MijnErfpachtConnectionLocation + ".get_notifications", autospec=True)
+    @patch(
+        "app.mijn_erfpacht_connection.MijnErfpachtConnection.send_request",
+        autospec=True,
+    )
+    @patch(
+        "app.mijn_erfpacht_connection.MijnErfpachtConnection.get_notifications",
+        autospec=True,
+    )
     @patch("app.tma_utils.get_tma_certificate", lambda: server_crt)
-    def test_get_check_erfpacht(self, mocked_check_meldingen, mocked_check_erfpacht):
+    def test_get_check_erfpacht(self, mocked_check_meldingen, mocked_send_request):
         """
         Test if getting is allowed, if the SAML token is correctly decoded
         and if the MijnErfpachtConnection is called
         """
+
+        res = ApiMock()
+
         # Mock the MijnErfpacht response
-        mocked_check_erfpacht.return_value = "true"
+        mocked_send_request.return_value = res
         mocked_check_meldingen.return_value = ApiMock().json()
 
         # Create SAML headers
@@ -109,20 +120,36 @@ class TestAPI(FlaskServerTMATestCase):
 
         # Check if the mocked method got called with the expected args
         # ANY covers the self argument
-        mocked_check_erfpacht.assert_called_once_with(ANY, self.TEST_BSN, "user")
+        # mocked_send_request.assert_called_once_with(ANY, self.TEST_BSN)
+        encrypted_payload = mocked_send_request.call_args[0][1].rsplit("/", 1)[-1]
+        additional_headers = mocked_send_request.call_args[0][2]
+        iv_header_key = "X-RANDOM-IV"
 
-    @patch(MijnErfpachtConnectionLocation + ".check_erfpacht", autospec=True)
-    @patch(MijnErfpachtConnectionLocation + ".get_notifications", autospec=True)
+        self.assertTrue(iv_header_key in additional_headers)
+
+        encrypted_payload = base64.urlsafe_b64decode(encrypted_payload.encode("ASCII"))
+
+        iv = additional_headers[iv_header_key]
+        iv = base64.urlsafe_b64decode(iv.encode("ASCII"))
+
+        self.assertTrue(decrypt(encrypted_payload, iv) == self.TEST_BSN)
+
+    @patch(
+        "app.mijn_erfpacht_connection.MijnErfpachtConnection.send_request",
+        autospec=True,
+    )
+    @patch(
+        "app.mijn_erfpacht_connection.MijnErfpachtConnection.get_notifications",
+        autospec=True,
+    )
     @patch("app.tma_utils.get_tma_certificate", lambda: server_crt)
-    def test_get_check_erfpacht_kvk(
-        self, mocked_check_meldingen, mocked_check_erfpacht
-    ):
+    def test_get_check_erfpacht_kvk(self, mocked_check_meldingen, mocked_send_request):
         """
         Test if getting is allowed, if the SAML token is correctly decoded
         and if the MijnErfpachtConnection is called
         """
         # Mock the MijnErfpacht response
-        mocked_check_erfpacht.return_value = "true"
+        mocked_send_request.return_value = ApiMock()
         mocked_check_meldingen.return_value = ApiMock().json()
 
         # Create SAML headers
@@ -134,9 +161,18 @@ class TestAPI(FlaskServerTMATestCase):
         # Check for a proper response
         self.assertEqual(res.status_code, 200)
 
-        # Check if the mocked method got called with the expected args
-        # ANY covers the self argument
-        mocked_check_erfpacht.assert_called_once_with(ANY, self.TEST_KVK, "company")
+        encrypted_payload = mocked_send_request.call_args[0][1].rsplit("/", 1)[-1]
+        additional_headers = mocked_send_request.call_args[0][2]
+        iv_header_key = "X-RANDOM-IV"
+
+        self.assertTrue(iv_header_key in additional_headers)
+
+        encrypted_payload = base64.urlsafe_b64decode(encrypted_payload.encode("ASCII"))
+
+        iv = additional_headers[iv_header_key]
+        iv = base64.urlsafe_b64decode(iv.encode("ASCII"))
+
+        self.assertTrue(decrypt(encrypted_payload, iv) == self.TEST_KVK)
 
     @patch("app.tma_utils.get_tma_certificate", lambda: server_crt)
     def test_get_check_erfpacht_invalid_saml(self):
@@ -173,32 +209,6 @@ class TestAPI(FlaskServerTMATestCase):
         self.assertEqual(res.status_code, 400)
         self.assertEqual(res.json, {"message": "Invalid BSN", "status": "ERROR"})
 
-    def test_update_check_erfpacht(self):
-        """Test if updating is not allowed"""
-        # Create SAML headers
-        SAML_HEADERS = self.add_digi_d_headers(self.TEST_BSN)
-
-        res = self.client.put(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
-        self.assertEqual(res.status_code, 405)
-        res = self.client.patch(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
-        self.assertEqual(res.status_code, 405)
-
-    def test_post_check_erfpacht(self):
-        """Test if posting is not allowed"""
-        # Create SAML headers
-        SAML_HEADERS = self.add_digi_d_headers(self.TEST_BSN)
-
-        res = self.client.post(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
-        self.assertEqual(res.status_code, 405)
-
-    def test_delete_check_erfpacht(self):
-        """Test if deleting is not allowed"""
-        # Create SAML headers
-        SAML_HEADERS = self.add_digi_d_headers(self.TEST_BSN)
-
-        res = self.client.delete(self.CHECK_ERFPACHT_URL, headers=SAML_HEADERS)
-        self.assertEqual(res.status_code, 405)
-
     # raise the requests' Timeout Exception
     @patch("app.mijn_erfpacht_connection.requests.get", side_effect=Timeout)
     @patch("app.tma_utils.get_tma_certificate", lambda: server_crt)
@@ -211,7 +221,7 @@ class TestAPI(FlaskServerTMATestCase):
         self.assertEqual(res.json, {"status": "ERROR", "message": "Timeout"})
 
     # ============================
-    # Test miscellaneous endpoints
+    # Test miscellaneous
     # ============================
 
     def test_health_page(self):
