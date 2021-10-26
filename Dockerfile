@@ -8,15 +8,17 @@ RUN apt-get update && apt-get install -y
 RUN pip install --upgrade pip
 RUN pip install uwsgi
 
-COPY /app /app
-COPY /tests /app/tests
-COPY /requirements.txt /app
-COPY /uwsgi.ini /app
+WORKDIR /app
 
-COPY test.sh /app
-COPY .flake8 /app
+COPY /app /
+COPY /tests /
+COPY /requirements.txt /
+COPY /uwsgi.ini /
 
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY /test.sh /
+COPY /.flake8 /
+
+RUN pip install --no-cache-dir -r ./requirements.txt
 
 #ENTRYPOINT ["uwsgi"]
-CMD uwsgi --ini /app/uwsgi.ini
+CMD uwsgi --ini ./uwsgi.ini
