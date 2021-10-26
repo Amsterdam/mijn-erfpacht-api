@@ -90,10 +90,10 @@ class MijnErfpachtConnection:
         return response.json()
 
     def get_notifications_bsn_v1(self, bsn):
-        return self.get_notifications_v1(bsn, "user")
+        return self.get_notifications_v1(bsn, "bsn")
 
     def get_notifications_kvk_v1(self, kvk_number):
-        return self.get_notifications_v1(kvk_number, "company")
+        return self.get_notifications_v1(kvk_number, "kvk")
 
     # Proper encryption with correct IV implementation
     def check_erfpacht_bsn(self, bsn):
