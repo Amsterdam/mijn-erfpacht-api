@@ -50,7 +50,7 @@ class MijnErfpachtConnection:
         user_type="user",
         operation="check/groundlease",
     ):
-        assert user_type in ["user", "company"]
+        assert user_type in ["user", "company", "kvk", "bsn"]
 
         payload = base64.urlsafe_b64encode(encrypted_payload).decode("ASCII")
 
@@ -109,7 +109,7 @@ class MijnErfpachtConnection:
         return response.text == "true"
 
     def get_notifications(self, identifier, user_type):
-        assert user_type in ["user", "company"]
+        assert user_type in ["bsn", "kvk"]
 
         (payload, iv) = get_encrypted_payload(identifier)
         url = self.get_api_url(payload, user_type=user_type, operation="notifications")
@@ -122,7 +122,7 @@ class MijnErfpachtConnection:
         return response.json()
 
     def get_notifications_bsn(self, bsn):
-        return self.get_notifications(bsn, "user")
+        return self.get_notifications(bsn, "bsn")
 
     def get_notifications_kvk(self, kvk_number):
-        return self.get_notifications(kvk_number, "company")
+        return self.get_notifications(kvk_number, "kvk")
