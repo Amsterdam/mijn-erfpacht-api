@@ -1,7 +1,7 @@
 import base64
 
 import requests
-from api.mijn_erfpacht.config import API_URL, credentials
+from api.config import API_URL, credentials, logger
 from api.mijn_erfpacht.utils import encrypt
 
 
@@ -26,6 +26,9 @@ class MijnErfpachtConnection:
         encoded_encryption = base64.urlsafe_b64encode(encrypted).decode("ASCII")
         headers = {"X-API-KEY": key, "X-RANDOM-IV": str(iv).encode("utf-8")}
         res = requests.get(f"{url}/{encoded_encryption}", headers=headers, timeout=9)
+
+        logger.debug(res)
+
         return res
 
     def check_erfpacht_bsn(self, bsn):

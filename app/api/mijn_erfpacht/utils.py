@@ -1,4 +1,4 @@
-from api.mijn_erfpacht.config import credentials
+from api.config import credentials
 from Crypto.Cipher import AES
 from Crypto import Random
 from Crypto.Util.Padding import pad, unpad

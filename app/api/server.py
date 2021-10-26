@@ -1,5 +1,3 @@
-import logging
-
 import sentry_sdk
 from flasgger import Swagger
 from flask import Flask, request
@@ -11,7 +9,7 @@ from requests import ConnectionError, Timeout
 from sentry_sdk.integrations.flask import FlaskIntegration
 from tma_saml import InvalidBSNException, SamlVerificationException
 
-from api.config import SENTRY_DSN, check_env
+from api.config import SENTRY_DSN, check_env, logger
 from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
 from api.tma_utils import get_bsn_from_request, get_kvk_number_from_request
 
@@ -25,7 +23,6 @@ CORS(app=app)
 if SENTRY_DSN:
     sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration()], with_locals=True)
 
-logger = logging.getLogger(__name__)
 
 """
 Info about Swagger
