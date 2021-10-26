@@ -26,8 +26,8 @@ def check_env():
         for v in [
             "MIJN_ERFPACHT_ENCRYPTION_VECTOR",
             "MIJN_ERFPACHT_ENCRYPTION_KEY",
-            "MIJN_ERFPACHT_API_KEY",
             "MIJN_ERFPACHT_API_KEY_V2",
+            "MIJN_ERFPACHT_API_KEY",
             "TMA_CERTIFICATE",
         ]
         if not os.getenv(v, None)
