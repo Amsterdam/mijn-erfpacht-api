@@ -8,7 +8,7 @@ from app.utils import get_encrypted_payload
 class MijnErfpachtConnection:
     """This helper class represents the connection to the MijnErfpacht API"""
 
-    def send_request(self, url, additional_headers):
+    def send_request(self, url, additional_headers=None):
         """Check for erfpacht at MijnErfpacht based on a BSN"""
 
         key = credentials["API_KEY"]
@@ -55,7 +55,7 @@ class MijnErfpachtConnection:
         payload = base64.urlsafe_b64encode(encrypted_payload).decode("ASCII")
 
         if version != 1:
-            version = "/v{version}"
+            version = f"/v{version}"
         else:
             version = ""
 

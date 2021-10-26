@@ -61,13 +61,13 @@ def get_data(kind, identifier):
     notifications = []
 
     if kind == "bsn":
-        has_erfpacht = con.check_erfpacht_bsn(identifier)
+        has_erfpacht = con.check_erfpacht_bsn_v1(identifier)
         if has_erfpacht:
-            notifications = con.get_notifications_bsn(identifier)
+            notifications = con.get_notifications_bsn_v1(identifier)
     elif kind == "kvk":
-        has_erfpacht = con.check_erfpacht_kvk(identifier)
+        has_erfpacht = con.check_erfpacht_kvk_v1(identifier)
         if has_erfpacht:
-            notifications = con.get_notifications_kvk(identifier)
+            notifications = con.get_notifications_kvk_v1(identifier)
 
     return has_erfpacht, notifications
 
