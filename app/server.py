@@ -56,7 +56,7 @@ swagger = Swagger(app, config=swagger_config)
 con = MijnErfpachtConnection()
 
 
-def get_data(kind, identifier):
+def get_data_v1(kind, identifier):
     has_erfpacht = False
     notifications = []
 
@@ -70,6 +70,63 @@ def get_data(kind, identifier):
             notifications = con.get_notifications_kvk_v1(identifier)
 
     return has_erfpacht, notifications
+
+
+def get_data(kind, identifier):
+    has_erfpacht = False
+    notifications = []
+
+    if kind == "bsn":
+        has_erfpacht = con.check_erfpacht_bsn(identifier)
+        if has_erfpacht:
+            notifications = con.get_notifications_bsn(identifier)
+    elif kind == "kvk":
+        has_erfpacht = con.check_erfpacht_kvk(identifier)
+        if has_erfpacht:
+            notifications = con.get_notifications_kvk(identifier)
+
+    return has_erfpacht, notifications
+
+
+class ErfpachtCheckv2(Resource):
+    def get(self):
+        kind = None
+        identifier = None
+
+        try:
+            identifier = get_kvk_number_from_request(request)
+            kind = "kvk"
+        except SamlVerificationException:
+            return {"status": "ERROR", "message": "Missing SAML token"}, 400
+        except KeyError:
+            # does not contain kvk number, might still contain BSN
+            pass
+
+        if not identifier:
+            try:
+                identifier = get_bsn_from_request(request)
+            except InvalidBSNException:
+                return {"status": "ERROR", "message": "Invalid BSN"}, 400
+            kind = "bsn"
+
+        try:
+            has_erfpacht, notifications = get_data(kind, identifier)
+        except Timeout:
+            return {"status": "ERROR", "message": "Timeout"}, 500
+        except ConnectionError as e:
+            logger.error(f"ConnectionError {e}")
+            return {"status": "ERROR", "message": "Connection Error"}, 500
+        except Exception as e:
+            logger.exception(e)
+            return {"status": "ERROR", "message": "Unknown error"}, 500
+
+        return {
+            "status": "OK",
+            "content": {
+                "isKnown": has_erfpacht,
+                "meldingen": notifications,
+            },
+        }
 
 
 class ErfpachtCheck(Resource):
@@ -115,7 +172,7 @@ class ErfpachtCheck(Resource):
             kind = "bsn"
 
         try:
-            has_erfpacht, notifications = get_data(kind, identifier)
+            has_erfpacht, notifications = get_data_v1(kind, identifier)
         except Timeout:
             return {"status": "ERROR", "message": "Timeout"}, 500
         except ConnectionError as e:
@@ -143,6 +200,7 @@ class Health(Resource):
 
 # Add resources to the api
 api.add_resource(ErfpachtCheck, "/api/erfpacht/check-erfpacht")
+api.add_resource(ErfpachtCheckv2, "/api/erfpacht/v2/check-erfpacht")
 api.add_resource(Health, "/status/health")
 
 if __name__ == "__main__":

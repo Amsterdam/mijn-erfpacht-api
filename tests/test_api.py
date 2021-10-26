@@ -61,7 +61,7 @@ class TestAPI(FlaskServerTMATestCase):
 
     TEST_BSN = "111222333"
     TEST_KVK = "90001354"  # kvk nummer taken from https://developers.kvk.nl/documentation/profile-v2-test
-    CHECK_ERFPACHT_URL = "/api/erfpacht/check-erfpacht"
+    CHECK_ERFPACHT_URL = "/api/erfpacht/v2/check-erfpacht"
 
     def setUp(self):
         """Setup app for testing"""
