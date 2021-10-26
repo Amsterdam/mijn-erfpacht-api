@@ -9,6 +9,7 @@ RUN pip install --upgrade pip
 RUN pip install uwsgi
 
 COPY /app /app
+COPY /tests /app/tests
 COPY /requirements.txt /app
 COPY /uwsgi.ini /app
 
