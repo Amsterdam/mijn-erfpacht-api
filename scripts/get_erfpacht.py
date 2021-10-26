@@ -1,7 +1,6 @@
 import logging
 from app.mijn_erfpacht_connection import MijnErfpachtConnection
 from app.config import logger
-from pprint import pprint
 from sys import argv
 
 identifier = argv[1]

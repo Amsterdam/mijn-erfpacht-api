@@ -10,13 +10,13 @@ RUN pip install uwsgi
 
 WORKDIR /app
 
-COPY /app /
-COPY /tests /
-COPY /requirements.txt /
-COPY /uwsgi.ini /
+COPY /app app
+COPY /tests tests
+COPY /requirements.txt requirements.txt
+COPY /uwsgi.ini uwsgi.ini
 
-COPY /test.sh /
-COPY /.flake8 /
+COPY /test.sh test.sh
+COPY /.flake8 .flake8
 
 WORKDIR /
 
