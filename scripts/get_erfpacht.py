@@ -1,6 +1,6 @@
 import logging
-from app.api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
-from app.api.config import logger
+from app.mijn_erfpacht_connection import MijnErfpachtConnection
+from app.config import logger
 from pprint import pprint
 from sys import argv
 

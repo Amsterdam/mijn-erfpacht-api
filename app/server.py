@@ -9,9 +9,9 @@ from requests import ConnectionError, Timeout
 from sentry_sdk.integrations.flask import FlaskIntegration
 from tma_saml import InvalidBSNException, SamlVerificationException
 
-from api.config import SENTRY_DSN, check_env, logger
-from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
-from api.tma_utils import get_bsn_from_request, get_kvk_number_from_request
+from app.config import SENTRY_DSN, check_env, logger
+from app.mijn_erfpacht_connection import MijnErfpachtConnection
+from app.tma_utils import get_bsn_from_request, get_kvk_number_from_request
 
 check_env()
 

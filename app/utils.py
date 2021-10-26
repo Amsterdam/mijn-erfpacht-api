@@ -1,4 +1,4 @@
-from api.config import credentials
+from app.config import credentials
 from Crypto.Cipher import AES
 from Crypto import Random
 from Crypto.Util.Padding import pad, unpad

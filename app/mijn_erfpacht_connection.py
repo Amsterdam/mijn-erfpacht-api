@@ -1,8 +1,8 @@
 import base64
 
 import requests
-from api.config import API_URL, credentials, logger
-from api.mijn_erfpacht.utils import encrypt
+from app.config import API_URL, credentials, logger
+from app.utils import encrypt
 
 
 class MijnErfpachtConnection:
