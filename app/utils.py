@@ -1,4 +1,3 @@
-from os import urandom
 from app.config import credentials
 from Crypto.Cipher import AES
 from Crypto import Random
@@ -37,7 +36,7 @@ def encrypt(plaintext):
 
     iv = Random.new().read(AES.block_size)
     # iv = Random.get_random_bytes(AES.block_size)
-    # iv = "".join([chr(urandom.randint(0, 0xFF)) for i in range(16)])
+    # iv = "".join([chr(urandom.randint(0, 0xFF)) for i in range(AES.block_size)])
 
     key = credentials["API_KEY_V2"]
 
