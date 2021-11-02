@@ -1,7 +1,10 @@
-from app.config import credentials
+import secrets
+import string
+
 from Crypto.Cipher import AES
-from Crypto import Random
 from Crypto.Util.Padding import pad, unpad
+
+from app.config import credentials
 
 
 def encrypt_v1(plaintext):
@@ -34,9 +37,13 @@ def encrypt(plaintext):
     Encrypt text based on the MijnErfpacht key and vector
     """
 
-    iv = Random.new().read(AES.block_size)
-    # iv = Random.get_random_bytes(AES.block_size)
-    # iv = "".join([chr(urandom.randint(0, 0xFF)) for i in range(AES.block_size)])
+    iv = bytes(
+        "".join(
+            secrets.choice(string.ascii_uppercase + string.ascii_lowercase)
+            for i in range(16)
+        ),
+        "utf-8",
+    )
 
     key = credentials["API_KEY_V2"]
 
