@@ -24,23 +24,12 @@ def retagAndPush(String imageName, String currentTag, String newTag)
     sh "docker push ${dockerReg}/${imageName}:${newTag}"
 }
 
+String BRANCH = "${env.BRANCH_NAME}"
+
 node {
     stage("Checkout") {
         checkout scm
     }
-
-    if (BRANCH != "test-acc") {
-        stage('Test') {
-            tryStep "test", {
-                docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                    docker.build("mijnams/mijn-decos-join:${env.BUILD_NUMBER}")
-                    sh "docker run --rm mijnams/mijn-decos-join:${env.BUILD_NUMBER} /app/test.sh"
-                }
-            }
-        }
-    }
-
-
 
     stage("Build image") {
         tryStep "build", {
@@ -52,10 +41,20 @@ node {
     }
 }
 
-String BRANCH = "${env.BRANCH_NAME}"
+if (BRANCH != "test-acc") {
+    node {
+        stage('Test') {
+            tryStep "test", {
+                docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
+                    docker.image("mijnams/erfpacht:${env.BUILD_NUMBER}").pull()
+                    sh "docker run --rm mijnams/erfpacht:${env.BUILD_NUMBER} /app/test.sh"
+                }
+            }
+        }
+    }
+}
 
-if (BRANCH == "test-acc") {
-
+if (BRANCH == "test-acc" || BRANCH == "master") {
     node {
         stage('Push acceptance image') {
             tryStep "image tagging", {
@@ -85,34 +84,6 @@ if (BRANCH == "test-acc") {
 }
 
 if (BRANCH == "master") {
-
-    node {
-        stage('Push acceptance image') {
-            tryStep "image tagging", {
-                docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                    docker.image("mijnams/erfpacht:${env.BUILD_NUMBER}").pull()
-                    // The Image.push() function ignores the docker registry prefix of the image name,
-                    // which means that we cannot re-tag an image that was built in a different stage (on a different node).
-                    // Resort to manual tagging to allow build and tag steps to run on different Jenkins slaves.
-                    retagAndPush("mijnams/erfpacht", "${env.BUILD_NUMBER}", "acceptance")
-                }
-            }
-        }
-    }
-
-    node {
-        stage("Deploy to ACC") {
-            tryStep "deployment", {
-                build job: 'Subtask_Openstack_Playbook',
-                    parameters: [
-                        [$class: 'StringParameterValue', name: 'INVENTORY', value: 'acceptance'],
-                        [$class: 'StringParameterValue', name: 'PLAYBOOK', value: 'deploy.yml'],
-                        [$class: 'StringParameterValue', name: 'PLAYBOOKPARAMS', value: "-e cmdb_id=app_erfpacht"]
-                    ]
-            }
-        }
-    }
-
     stage('Waiting for approval') {
         slackSend channel: '#ci-channel', color: 'warning', message: 'erfpacht-api is waiting for Production Release - please confirm'
         input "Deploy to Production?"
