@@ -1,3 +1,4 @@
+from os import urandom
 from app.config import credentials
 from Crypto.Cipher import AES
 from Crypto import Random
@@ -34,8 +35,11 @@ def encrypt(plaintext):
     Encrypt text based on the MijnErfpacht key and vector
     """
 
-    iv = Random.get_random_bytes(AES.block_size)
-    key = credentials["ENCRYPTION_KEY"]
+    iv = Random.new().read(AES.block_size)
+    # iv = Random.get_random_bytes(AES.block_size)
+    # iv = "".join([chr(urandom.randint(0, 0xFF)) for i in range(16)])
+
+    key = credentials["API_KEY_V2"]
 
     if not key:
         raise Exception(
@@ -49,13 +53,14 @@ def encrypt(plaintext):
 
     # Apply padding to the plaintext
     padded_plaintext = pad(plaintext.encode("utf-8"), AES.block_size)
+    # padded_plaintext = pad_pkcs7(bytes(plaintext, "utf-8"))
 
     # Encrypt the whole thing and return
     return (cipher.encrypt(padded_plaintext), iv)
 
 
 def decrypt(encrypted, iv):
-    key = credentials["ENCRYPTION_KEY"]
+    key = credentials["API_KEY_V2"]
 
     if not key:
         raise Exception(
