@@ -45,7 +45,7 @@ def encrypt(plaintext):
         "utf-8",
     )
 
-    key = credentials["API_KEY_V2"]
+    key = credentials["ENCRYPTION_KEY_V2"]
 
     if not key:
         raise Exception(
@@ -66,7 +66,7 @@ def encrypt(plaintext):
 
 
 def decrypt(encrypted, iv):
-    key = credentials["API_KEY_V2"]
+    key = credentials["ENCRYPTION_KEY_V2"]
 
     if not key:
         raise Exception(
