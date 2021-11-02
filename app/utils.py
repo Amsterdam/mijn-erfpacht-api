@@ -40,7 +40,7 @@ def encrypt(plaintext):
     iv = bytes(
         "".join(
             secrets.choice(string.ascii_uppercase + string.ascii_lowercase)
-            for i in range(16)
+            for i in range(AES.block_size)
         ),
         "utf-8",
     )
