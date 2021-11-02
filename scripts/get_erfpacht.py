@@ -19,3 +19,6 @@ if kind == "bsn":
     has_erfpacht = con.check_erfpacht_bsn(identifier)
 elif kind == "bsn_v1":
     has_erfpacht = con.check_erfpacht_bsn_v1(identifier)
+
+
+print("has_erfpacht", has_erfpacht)

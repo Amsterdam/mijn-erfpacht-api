@@ -35,8 +35,7 @@ def encrypt(plaintext):
     """
 
     iv = Random.get_random_bytes(AES.block_size)
-    key = credentials["API_KEY_V2"]
-    # key = credentials["ENCRYPTION_KEY"]
+    key = credentials["ENCRYPTION_KEY"]
 
     if not key:
         raise Exception(

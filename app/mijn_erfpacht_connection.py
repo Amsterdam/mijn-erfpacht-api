@@ -42,11 +42,8 @@ class MijnErfpachtConnection:
 
     def get_iv_header(self, iv: bytes):
         return {
-            "X-RANDOM-IV": str(iv, "utf-8"),
-            # "X-RANDOM-IV": iv.decode("utf-8"),
-            # "X-RANDOM-IV": base64.urlsafe_b64encode(iv).decode("ASCII"),
-            "X-API-KEY": credentials["API_KEY"],
-            # "X-API-KEY": credentials["API_KEY_V2"],
+            "X-RANDOM-IV": str(iv),
+            "X-API-KEY": credentials["API_KEY_V2"],
         }
 
     def get_api_url(
