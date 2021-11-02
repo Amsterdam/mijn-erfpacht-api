@@ -29,14 +29,17 @@ node {
         checkout scm
     }
 
-    stage('Test') {
-        tryStep "test", {
-            docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
-                docker.build("mijnams/erfpacht:${env.BUILD_NUMBER}")
-                sh "docker run --rm mijnams/erfpacht:${env.BUILD_NUMBER} /app/test.sh"
+    if (BRANCH != "test-acc") {
+        stage('Test') {
+            tryStep "test", {
+                docker.withRegistry("${DOCKER_REGISTRY_HOST}",'docker_registry_auth') {
+                    docker.build("mijnams/mijn-decos-join:${env.BUILD_NUMBER}")
+                    sh "docker run --rm mijnams/mijn-decos-join:${env.BUILD_NUMBER} /app/test.sh"
+                }
             }
         }
     }
+
 
 
     stage("Build image") {
