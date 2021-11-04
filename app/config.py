@@ -7,7 +7,7 @@ credentials = dict(
     ENCRYPTION_VECTOR=os.getenv("MIJN_ERFPACHT_ENCRYPTION_VECTOR"),
     ENCRYPTION_KEY=os.getenv("MIJN_ERFPACHT_ENCRYPTION_KEY"),
     API_KEY=os.getenv("MIJN_ERFPACHT_API_KEY"),
-    ENCRYPTION_KEY_V2=os.getenv("MIJN_ERFPACHT_API_KEY_V2"),
+    ENCRYPTION_KEY_V2=os.getenv("MIJN_ERFPACHT_ENCRYPTION_KEY_V2"),
 )
 
 API_URL = os.getenv("MIJN_ERFPACHT_API_URL")
@@ -26,7 +26,7 @@ def check_env():
         for v in [
             "MIJN_ERFPACHT_ENCRYPTION_VECTOR",
             "MIJN_ERFPACHT_ENCRYPTION_KEY",
-            "MIJN_ERFPACHT_API_KEY_V2",
+            "MIJN_ERFPACHT_ENCRYPTION_KEY_V2",
             "MIJN_ERFPACHT_API_KEY",
             "TMA_CERTIFICATE",
         ]
