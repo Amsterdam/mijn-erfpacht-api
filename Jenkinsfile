@@ -3,7 +3,7 @@
 def retagAndPush(String imageName, String currentTag, String newTag)
 {
     def regex = ~"^https?://"
-    def dockerReg = "${DOCKER_REGISTRY_HOST}" - regex
+    def dockerReg = DOCKER_REGISTRY_HOST - regex
     sh "docker tag ${dockerReg}/${imageName}:${currentTag} ${dockerReg}/${imageName}:${newTag}"
     sh "docker push ${dockerReg}/${imageName}:${newTag}"
 }
@@ -19,8 +19,8 @@ node {
     }
 
     stage("Build image") {
-        docker.withRegistry("${DOCKER_REGISTRY_HOST}", "docker_registry_auth") {
-            def image = docker.build("${IMAGE_TAG}")
+        docker.withRegistry(DOCKER_REGISTRY_HOST, "docker_registry_auth") {
+            def image = docker.build(IMAGE_TAG)
             image.push()
         }
     }
@@ -30,8 +30,8 @@ node {
 if (BRANCH != "test-acc") {
     node {
         stage("Test") {
-            docker.withRegistry("${DOCKER_REGISTRY_HOST}", "docker_registry_auth") {
-                docker.image("${IMAGE_TAG}").pull()
+            docker.withRegistry(DOCKER_REGISTRY_HOST, "docker_registry_auth") {
+                docker.image(IMAGE_TAG).pull()
                 sh "docker run --rm ${IMAGE_TAG} /app/test.sh"
             }
         }
@@ -41,9 +41,9 @@ if (BRANCH != "test-acc") {
 if (BRANCH == "test-acc" || BRANCH == "master") {
     node {
         stage("Push acceptance image") {
-            docker.withRegistry("${DOCKER_REGISTRY_HOST}", "docker_registry_auth") {
-                docker.image("${IMAGE_TAG}").pull()
-                retagAndPush("${IMAGE_NAME}", "${env.BUILD_NUMBER}", "acceptance")
+            docker.withRegistry(DOCKER_REGISTRY_HOST, "docker_registry_auth") {
+                docker.image(IMAGE_TAG).pull()
+                retagAndPush(IMAGE_NAME, env.BUILD_NUMBER, "acceptance")
             }
         }
     }
@@ -67,9 +67,9 @@ if (BRANCH == "master") {
 
     node {
         stage("Push production image") {
-            docker.withRegistry("${DOCKER_REGISTRY_HOST}", "docker_registry_auth") {
-                docker.image("${IMAGE_TAG}").pull()
-                retagAndPush("${IMAGE_NAME}", "${env.BUILD_NUMBER}", "production")
+            docker.withRegistry(DOCKER_REGISTRY_HOST, "docker_registry_auth") {
+                docker.image(IMAGE_TAG).pull()
+                retagAndPush(IMAGE_NAME, env.BUILD_NUMBER, "production")
             }
         }
     }
