@@ -131,7 +131,6 @@ class TestAPI(FlaskServerTMATestCase):
         encrypted_payload = base64.urlsafe_b64decode(encrypted_payload.encode("ASCII"))
 
         iv = additional_headers[iv_header_key]
-        iv = base64.urlsafe_b64decode(iv.encode("ASCII"))
 
         self.assertTrue(decrypt(encrypted_payload, iv) == self.TEST_BSN)
 
@@ -171,7 +170,6 @@ class TestAPI(FlaskServerTMATestCase):
         encrypted_payload = base64.urlsafe_b64decode(encrypted_payload.encode("ASCII"))
 
         iv = additional_headers[iv_header_key]
-        iv = base64.urlsafe_b64decode(iv.encode("ASCII"))
 
         self.assertTrue(decrypt(encrypted_payload, iv) == self.TEST_KVK)
 
