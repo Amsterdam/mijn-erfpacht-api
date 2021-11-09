@@ -219,20 +219,7 @@ class TestAPI(FlaskServerTMATestCase):
         self.assertEqual(res.status_code, 500)
         self.assertEqual(res.json, {"status": "ERROR", "message": "Timeout"})
 
-    # ============================
-    # Test miscellaneous
-    # ============================
-
     def test_health_page(self):
         """Test if the health page lives"""
         res = self.client.get("/status/health")
         self.assertEqual(res.json, "OK")
-
-    def test_swagger(self):
-        """Test if swagger lives"""
-        res = self.client.get("/api/erfpacht")
-        self.assertEqual(res.status_code, 200)
-
-    def test_encryption(self):
-        (encrypted, iv) = encrypt("TEST")
-        self.assertEqual("TEST", decrypt(encrypted, iv))

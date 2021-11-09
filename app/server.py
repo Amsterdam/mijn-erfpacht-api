@@ -9,11 +9,9 @@ from requests import ConnectionError, Timeout
 from sentry_sdk.integrations.flask import FlaskIntegration
 from tma_saml import InvalidBSNException, SamlVerificationException
 
-from app.config import SENTRY_DSN, check_env, logger
+from app.config import SENTRY_DSN, logger
 from app.mijn_erfpacht_connection import MijnErfpachtConnection
 from app.tma_utils import get_bsn_from_request, get_kvk_number_from_request
-
-check_env()
 
 # Init app and set CORS
 app = Flask(__name__)
@@ -45,31 +43,11 @@ swagger_config = {
             "title": "MijnErfpacht API Client",
         }
     ],
-    "static_url_path": "/api/erfpacht/static",
-    # "static_folder": "static",  # must be set by user
-    "swagger_ui": True,
-    "specs_route": "/api/erfpacht",
 }
 swagger = Swagger(app, config=swagger_config)
 
 # Init connection to mijn erfpacht
 con = MijnErfpachtConnection()
-
-
-def get_data_v1(kind, identifier):
-    has_erfpacht = False
-    notifications = []
-
-    if kind == "bsn":
-        has_erfpacht = con.check_erfpacht_bsn_v1(identifier)
-        if has_erfpacht:
-            notifications = con.get_notifications_bsn_v1(identifier)
-    elif kind == "kvk":
-        has_erfpacht = con.check_erfpacht_kvk_v1(identifier)
-        if has_erfpacht:
-            notifications = con.get_notifications_kvk_v1(identifier)
-
-    return has_erfpacht, notifications
 
 
 def get_data(kind, identifier):
@@ -129,68 +107,6 @@ class ErfpachtCheckv2(Resource):
         }
 
 
-class ErfpachtCheck(Resource):
-    """Class representing the 'api/erfpacht/check-erfpacht' endpoint"""
-
-    def get(self):  # noqa: C901
-        """
-        Check if a person or company has erfpacht based on a BSN/KVK
-        ---
-        responses:
-          200:
-            description: Erfpacht successfully checked
-            type: boolean
-            example: True
-          400:
-            description: Invalid SAML or BSN
-        """
-        parser = reqparse.RequestParser()
-        token_arg_name = "x-saml-attribute-token1"
-        parser.add_argument(
-            token_arg_name,
-            location="headers",
-            required=True,
-            help="SAML token required",
-        )
-        kind = None
-        identifier = None
-
-        try:
-            identifier = get_kvk_number_from_request(request)
-            kind = "kvk"
-        except SamlVerificationException:
-            return {"status": "ERROR", "message": "Missing SAML token"}, 400
-        except KeyError:
-            # does not contain kvk number, might still contain BSN
-            pass
-
-        if not identifier:
-            try:
-                identifier = get_bsn_from_request(request)
-            except InvalidBSNException:
-                return {"status": "ERROR", "message": "Invalid BSN"}, 400
-            kind = "bsn"
-
-        try:
-            has_erfpacht, notifications = get_data_v1(kind, identifier)
-        except Timeout:
-            return {"status": "ERROR", "message": "Timeout"}, 500
-        except ConnectionError as e:
-            logger.error(f"ConnectionError {e}")
-            return {"status": "ERROR", "message": "Connection Error"}, 500
-        except Exception as e:
-            logger.exception(e)
-            return {"status": "ERROR", "message": "Unknown error"}, 500
-
-        return {
-            "status": "OK",
-            "content": {
-                "isKnown": has_erfpacht,
-                "meldingen": notifications,
-            },
-        }
-
-
 class Health(Resource):
     """Used in deployment to check if the API lives"""
 
@@ -199,7 +115,6 @@ class Health(Resource):
 
 
 # Add resources to the api
-api.add_resource(ErfpachtCheck, "/api/erfpacht/check-erfpacht")
 api.add_resource(ErfpachtCheckv2, "/api/erfpacht/v2/check-erfpacht")
 api.add_resource(Health, "/status/health")
 
