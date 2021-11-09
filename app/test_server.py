@@ -1,5 +1,4 @@
 import base64
-import logging
 import os
 from unittest.mock import patch
 
@@ -17,9 +16,8 @@ MOCK_ENV_VARIABLES = {
 }
 
 with patch.dict(os.environ, MOCK_ENV_VARIABLES):
-    from app.config import logger
-    from app.utils import decrypt, encrypt
     from app.server import app
+    from app.utils import decrypt
 
 
 class ApiMock:
@@ -67,7 +65,6 @@ class TestAPI(FlaskServerTMATestCase):
     def setUp(self):
         """Setup app for testing"""
         self.client = self.get_tma_test_app(app)
-        logger.setLevel(logging.DEBUG)
         return app
 
     # =================================
