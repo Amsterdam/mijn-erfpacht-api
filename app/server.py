@@ -1,5 +1,3 @@
-import logging
-
 import sentry_sdk
 from flasgger import Swagger
 from flask import Flask, request
@@ -11,11 +9,9 @@ from requests import ConnectionError, Timeout
 from sentry_sdk.integrations.flask import FlaskIntegration
 from tma_saml import InvalidBSNException, SamlVerificationException
 
-from api.config import SENTRY_DSN, check_env
-from api.mijn_erfpacht.mijn_erfpacht_connection import MijnErfpachtConnection
-from api.tma_utils import get_bsn_from_request, get_kvk_number_from_request
-
-check_env()
+from app.config import SENTRY_DSN, logger
+from app.mijn_erfpacht_connection import MijnErfpachtConnection
+from app.tma_utils import get_bsn_from_request, get_kvk_number_from_request
 
 # Init app and set CORS
 app = Flask(__name__)
@@ -25,7 +21,6 @@ CORS(app=app)
 if SENTRY_DSN:
     sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration()], with_locals=True)
 
-logger = logging.getLogger(__name__)
 
 """
 Info about Swagger
@@ -48,10 +43,6 @@ swagger_config = {
             "title": "MijnErfpacht API Client",
         }
     ],
-    "static_url_path": "/api/erfpacht/static",
-    # "static_folder": "static",  # must be set by user
-    "swagger_ui": True,
-    "specs_route": "/api/erfpacht",
 }
 swagger = Swagger(app, config=swagger_config)
 
@@ -75,29 +66,8 @@ def get_data(kind, identifier):
     return has_erfpacht, notifications
 
 
-class ErfpachtCheck(Resource):
-    """Class representing the 'api/erfpacht/check-erfpacht' endpoint"""
-
-    def get(self):  # noqa: C901
-        """
-        Check if a person or company has erfpacht based on a BSN/KVK
-        ---
-        responses:
-          200:
-            description: Erfpacht successfully checked
-            type: boolean
-            example: True
-          400:
-            description: Invalid SAML or BSN
-        """
-        parser = reqparse.RequestParser()
-        token_arg_name = "x-saml-attribute-token1"
-        parser.add_argument(
-            token_arg_name,
-            location="headers",
-            required=True,
-            help="SAML token required",
-        )
+class ErfpachtCheckv2(Resource):
+    def get(self):
         kind = None
         identifier = None
 
@@ -145,7 +115,7 @@ class Health(Resource):
 
 
 # Add resources to the api
-api.add_resource(ErfpachtCheck, "/api/erfpacht/check-erfpacht")
+api.add_resource(ErfpachtCheckv2, "/api/erfpacht/v2/check-erfpacht")
 api.add_resource(Health, "/status/health")
 
 if __name__ == "__main__":

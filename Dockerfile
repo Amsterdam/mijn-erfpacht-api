@@ -1,6 +1,6 @@
 FROM amsterdam/python
 
-MAINTAINER datapunt@amsterdam.nl
+LABEL maintainer=datapunt@amsterdam.nl
 
 ENV PYTHONUNBUFFERED 1
 
@@ -8,14 +8,17 @@ RUN apt-get update && apt-get install -y
 RUN pip install --upgrade pip
 RUN pip install uwsgi
 
-COPY /api /app/api
-COPY /requirements.txt /app
-COPY /uwsgi.ini /app
+WORKDIR /app
 
-COPY test.sh /app
-COPY .flake8 /app/
+COPY app ./app
+COPY scripts ./scripts
+COPY requirements.txt .
+COPY uwsgi.ini .
+
+COPY test.sh .
+COPY .flake8 .
 
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-#ENTRYPOINT ["uwsgi"]
+USER datapunt
 CMD uwsgi --ini /app/uwsgi.ini
