@@ -2,7 +2,7 @@ import base64
 
 import requests
 from app.config import API_KEY, API_URL, ERFPACHT_API_REQUEST_TIMEOUT, logger
-from app.utils import encrypt
+from app.helpers import encrypt
 
 
 class MijnErfpachtConnection:

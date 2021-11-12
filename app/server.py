@@ -11,7 +11,7 @@ from tma_saml import InvalidBSNException, SamlVerificationException
 
 from app.config import SENTRY_DSN, logger
 from app.mijn_erfpacht_connection import MijnErfpachtConnection
-from app.tma_utils import get_bsn_from_request, get_kvk_number_from_request
+from app.helpers import get_bsn_from_request, get_kvk_number_from_request
 
 # Init app and set CORS
 app = Flask(__name__)
