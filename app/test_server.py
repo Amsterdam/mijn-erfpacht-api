@@ -1,23 +1,12 @@
 import base64
-import os
 from unittest.mock import patch
 
 from requests import Timeout
 from tma_saml import FlaskServerTMATestCase
 from tma_saml.for_tests.cert_and_key import server_crt
 
-MOCK_ENV_VARIABLES = {
-    "MIJN_ERFPACHT_ENCRYPTION_VECTOR": "1234567890123456",
-    "MIJN_ERFPACHT_ENCRYPTION_KEY": "1234567890123456",
-    "MIJN_ERFPACHT_ENCRYPTION_KEY_V2": "1234567890123456",
-    "MIJN_ERFPACHT_API_KEY": "1234567890123456",
-    "TMA_CERTIFICATE": __file__,  # any file, it should not be used
-    "MIJN_ERFPACHT_API_URL": "X",
-}
-
-with patch.dict(os.environ, MOCK_ENV_VARIABLES):
-    from app.server import app
-    from app.helpers import decrypt
+from app.helpers import decrypt
+from app.server import app
 
 
 class ApiMock:
@@ -71,6 +60,8 @@ class TestAPI(FlaskServerTMATestCase):
     # Test the /check-erfpacht endpoint
     # =================================
 
+    @patch("app.mijn_erfpacht_connection.API_KEY", "xxxx")
+    @patch("app.helpers.ENCRYPTION_KEY_V2", "xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xx")
     @patch("app.mijn_erfpacht_connection.requests.get", autospec=True)
     @patch("app.helpers.get_tma_certificate", lambda: server_crt)
     def test_get_check_erfpacht_view(self, api_mocked):
@@ -86,6 +77,8 @@ class TestAPI(FlaskServerTMATestCase):
         self.assertEqual(content["isKnown"], True)
         self.assertEqual(len(content["meldingen"]), 3)
 
+    @patch("app.mijn_erfpacht_connection.API_KEY", "xxxx")
+    @patch("app.helpers.ENCRYPTION_KEY_V2", "xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xx")
     @patch(
         "app.mijn_erfpacht_connection.MijnErfpachtConnection.send_request",
         autospec=True,
@@ -131,6 +124,8 @@ class TestAPI(FlaskServerTMATestCase):
 
         self.assertTrue(decrypt(encrypted_payload, iv) == self.TEST_BSN)
 
+    @patch("app.mijn_erfpacht_connection.API_KEY", "xxxx")
+    @patch("app.helpers.ENCRYPTION_KEY_V2", "xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xx")
     @patch(
         "app.mijn_erfpacht_connection.MijnErfpachtConnection.send_request",
         autospec=True,
@@ -206,6 +201,8 @@ class TestAPI(FlaskServerTMATestCase):
         self.assertEqual(res.json, {"message": "Invalid BSN", "status": "ERROR"})
 
     # raise the requests' Timeout Exception
+    @patch("app.mijn_erfpacht_connection.API_KEY", "xxxx")
+    @patch("app.helpers.ENCRYPTION_KEY_V2", "xxxx-xxxx-xxxx-xxxx-xxxx-xxxx-xx")
     @patch("app.mijn_erfpacht_connection.requests.get", side_effect=Timeout)
     @patch("app.helpers.get_tma_certificate", lambda: server_crt)
     def test_timeout(self, timeout_mock):

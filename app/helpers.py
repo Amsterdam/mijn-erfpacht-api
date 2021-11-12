@@ -35,14 +35,12 @@ def encrypt(plaintext):
 
 
 def decrypt(encrypted, iv):
-    key = ENCRYPTION_KEY_V2
-
-    if not key:
+    if not ENCRYPTION_KEY_V2:
         raise Exception(
             "No encryption key found in environment variables or key is None/empty string"
         )
 
-    encryption_key = bytes(key, "utf-8")
+    encryption_key = bytes(ENCRYPTION_KEY_V2, "utf-8")
 
     cipher = AES.new(encryption_key, AES.MODE_CBC, iv)
     return unpad(cipher.decrypt(encrypted), AES.block_size).decode("utf-8")
