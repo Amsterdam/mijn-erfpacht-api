@@ -1,10 +1,5 @@
-import logging
 from sys import argv
-
-from app.config import logger
-from app.mijn_erfpacht_connection import MijnErfpachtConnection
-
-logger.setLevel(logging.DEBUG)
+from app.mijn_erfpacht_service import MijnErfpachtConnection
 
 identifier = argv[1]
 

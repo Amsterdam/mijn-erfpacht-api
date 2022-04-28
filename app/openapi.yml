@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: Erfpacht koppel api
+  description: Erfpacht koppel api
+  version: 1.0.0
+paths:
+  /api/erfpacht/v2/check-erfpacht:
+    parameters:
+      - name: Authorization
+        in: header
+        description: Bearer token
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Meldingen en tips uit het erfpacht portaal op basis van BSN.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    nullable: true
+                    $ref: "#/components/schemas/UserInfo"
+                  status:
+                    type: string
+                    enum:
+                      - "OK"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /status/health:
+    get:
+      summary: returns "OK"
+      responses:
+        "200":
+          description: Returns "OK"
+          content:
+            application/json:
+              schema:
+                type: string
+                enum:
+                  - "OK"
+components:
+  schemas:
+    UserInfo:
+      type: object
+      properties:
+        isKnown:
+          type: boolean
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyNotification"
+        tips:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tip"
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - "ERROR"
+        message:
+          type: string
+    MyNotification:
+      type: object
+      properties:
+        datePublished:
+          type: string
+          format: date
+          example: '2019-12-13'
+        description:
+          type: string
+        id:
+          type: string
+        priority:
+          type: number
+          example: 0
+        title:
+          type: string
+        link:
+          $ref: '#/components/schemas/Link'
+    Tip:
+      type: object
+      properties:
+        datePublished:
+          type: string
+          format: date-time
+          example: '2020-01-28T13:11:51Z'
+        description:
+          type: string
+        id:
+          type: string
+        priority:
+          type: number
+          example: 1
+        title:
+          type: string
+        link:
+          $ref: '#/components/schemas/Link'
+        reason:
+          type: string
+    Link:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 'Meer informatie'
+        to:
+          type: string
+          example: 'https://example.org/some/action'

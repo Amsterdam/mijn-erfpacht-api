@@ -1,7 +1,9 @@
 import base64
+import logging
 
 import requests
-from app.config import API_KEY, API_URL, ERFPACHT_API_REQUEST_TIMEOUT, logger
+from app.auth import PROFILE_TYPE_COMMERCIAL, PROFILE_TYPE_PRIVATE
+from app.config import API_KEY, API_URL, ERFPACHT_API_REQUEST_TIMEOUT
 from app.helpers import encrypt
 
 
@@ -22,7 +24,7 @@ class MijnErfpachtConnection:
 
         res = requests.get(url, headers=headers, timeout=ERFPACHT_API_REQUEST_TIMEOUT)
 
-        logger.debug("Response status: {}, text: {}".format(res.status_code, res.text))
+        logging.debug("Response status: {}, text: {}".format(res.status_code, res.text))
 
         if res.status_code == 403:
             raise Exception(
@@ -50,7 +52,7 @@ class MijnErfpachtConnection:
         user_type="user",
         operation="check/groundlease",
     ):
-        assert user_type in ["user", "company", "kvk", "bsn"]
+        assert user_type in ["kvk", "bsn", "user", "company"]
 
         payload = base64.urlsafe_b64encode(encrypted_payload).decode("ASCII")
 
@@ -87,3 +89,20 @@ class MijnErfpachtConnection:
 
     def get_notifications_kvk(self, kvk_number):
         return self.get_notifications(kvk_number, "kvk")
+
+
+def get_data(user):
+    has_erfpacht = False
+    notifications = []
+    con = MijnErfpachtConnection()
+
+    if user["type"] == PROFILE_TYPE_PRIVATE:
+        has_erfpacht = con.check_erfpacht_bsn(user["id"])
+        if has_erfpacht:
+            notifications = con.get_notifications_bsn(user["id"])
+    elif user["type"] == PROFILE_TYPE_COMMERCIAL:
+        has_erfpacht = con.check_erfpacht_kvk(user["id"])
+        if has_erfpacht:
+            notifications = con.get_notifications_kvk(user["id"])
+
+    return {"isKnown": has_erfpacht, "notifications": notifications}

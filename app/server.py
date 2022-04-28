@@ -1,122 +1,74 @@
+import logging
 import sentry_sdk
-from flasgger import Swagger
-from flask import Flask, request
-from flask_cors import CORS
-from flask_restful import Api, Resource, reqparse
 
-# Check the environment, will raise an exception if the server is not supplied with sufficient info
-from requests import ConnectionError, Timeout
+from flask import Flask
+
+from requests.exceptions import HTTPError
 from sentry_sdk.integrations.flask import FlaskIntegration
-from tma_saml import InvalidBSNException, SamlVerificationException
 
-from app.config import SENTRY_DSN, logger
-from app.mijn_erfpacht_connection import MijnErfpachtConnection
-from app.helpers import get_bsn_from_request, get_kvk_number_from_request
+from app import auth, mijn_erfpacht_service
+from app.config import (
+    IS_DEV,
+    SENTRY_DSN,
+    CustomJSONEncoder,
+)
+from app.helpers import (
+    error_response_json,
+    success_response_json,
+    validate_openapi,
+)
 
-# Init app and set CORS
+
 app = Flask(__name__)
-api = Api(app)
-CORS(app=app)
+app.json_encoder = CustomJSONEncoder
 
-if SENTRY_DSN:
-    sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FlaskIntegration()], with_locals=True)
-
-
-"""
-Info about Swagger
-==================
-
-In this app we use Flasgger -> https://github.com/rochacbruno/flasgger
-Flasgger provides the possibility to describe swagger per endpoint in the
-endpoint's description. These description is automatically collected and merged
-into a swagger spec which is exposed on '/api/erfpacht/'.
-"""
-# Configure Swagger
-swagger_config = {
-    "headers": [],
-    "specs": [
-        {
-            "endpoint": "apispec_1",
-            "route": "/api/erfpacht/apispec_1.json",
-            "rule_filter": lambda rule: True,  # all in
-            "model_filter": lambda tag: True,  # all in
-            "title": "MijnErfpacht API Client",
-        }
-    ],
-}
-swagger = Swagger(app, config=swagger_config)
-
-# Init connection to mijn erfpacht
-con = MijnErfpachtConnection()
+if SENTRY_DSN:  # pragma: no cover
+    sentry_sdk.init(
+        dsn=SENTRY_DSN, integrations=[FlaskIntegration()], with_locals=False
+    )
 
 
-def get_data(kind, identifier):
-    has_erfpacht = False
-    notifications = []
+@app.route("/api/erfpacht/v2/check-erfpacht", methods=["GET"])
+@auth.login_required
+@validate_openapi
+def get_all():
+    user = auth.get_current_user()
+    content = mijn_erfpacht_service.get_data(user)
 
-    if kind == "bsn":
-        has_erfpacht = con.check_erfpacht_bsn(identifier)
-        if has_erfpacht:
-            notifications = con.get_notifications_bsn(identifier)
-    elif kind == "kvk":
-        has_erfpacht = con.check_erfpacht_kvk(identifier)
-        if has_erfpacht:
-            notifications = con.get_notifications_kvk(identifier)
-
-    return has_erfpacht, notifications
+    return success_response_json(content)
 
 
-class ErfpachtCheckv2(Resource):
-    def get(self):
-        kind = None
-        identifier = None
-
-        try:
-            identifier = get_kvk_number_from_request(request)
-            kind = "kvk"
-        except SamlVerificationException:
-            return {"status": "ERROR", "message": "Missing SAML token"}, 400
-        except KeyError:
-            # does not contain kvk number, might still contain BSN
-            pass
-
-        if not identifier:
-            try:
-                identifier = get_bsn_from_request(request)
-            except InvalidBSNException:
-                return {"status": "ERROR", "message": "Invalid BSN"}, 400
-            kind = "bsn"
-
-        try:
-            has_erfpacht, notifications = get_data(kind, identifier)
-        except Timeout:
-            return {"status": "ERROR", "message": "Timeout"}, 500
-        except ConnectionError as e:
-            logger.error(f"ConnectionError {e}")
-            return {"status": "ERROR", "message": "Connection Error"}, 500
-        except Exception as e:
-            logger.exception(e)
-            return {"status": "ERROR", "message": "Unknown error"}, 500
-
-        return {
-            "status": "OK",
-            "content": {
-                "isKnown": has_erfpacht,
-                "meldingen": notifications,
-            },
-        }
+@app.route("/status/health")
+def health_check():
+    return success_response_json("OK")
 
 
-class Health(Resource):
-    """Used in deployment to check if the API lives"""
+@app.errorhandler(Exception)
+def handle_error(error):
 
-    def get(self):
-        return "OK"
+    error_message_original = f"{type(error)}:{str(error)}"
+
+    msg_auth_exception = "Auth error occurred"
+    msg_request_http_error = "Request error occurred"
+    msg_server_error = "Server error occurred"
+
+    logging.exception(error, extra={"error_message_original": error_message_original})
+
+    if IS_DEV:  # pragma: no cover
+        msg_auth_exception = error_message_original
+        msg_request_http_error = error_message_original
+        msg_server_error = error_message_original
+
+    if isinstance(error, HTTPError):
+        return error_response_json(
+            msg_request_http_error,
+            error.response.status_code,
+        )
+    elif auth.is_auth_exception(error):
+        return error_response_json(msg_auth_exception, 401)
+
+    return error_response_json(msg_server_error, 500)
 
 
-# Add resources to the api
-api.add_resource(ErfpachtCheckv2, "/api/erfpacht/v2/check-erfpacht")
-api.add_resource(Health, "/status/health")
-
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     app.run()

@@ -1,17 +1,11 @@
-requests
-pycryptodome
-
-# flask and plugins
-Flask
-Flask-Cors
-Flask-RESTful
-flasgger
-
-# TMA token verification tools
-tma-saml>=0.4.1
-
-# testing tools
-flake8
+black
 coverage
-
+cryptography
+flake8
+flask
+flask_httpauth
+openapi-core
+pycryptodome
+pyjwt
+requests
 sentry-sdk[flask]
