@@ -10,8 +10,6 @@ COPY uwsgi.ini /api
 COPY /test.sh /api
 COPY .flake8 /api
 
-COPY /cert /api/cert
-
 RUN pip install --no-cache-dir -r /api/requirements.txt
 
 USER datapunt
