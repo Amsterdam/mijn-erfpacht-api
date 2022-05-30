@@ -10,5 +10,8 @@ notifications = []
 
 has_erfpacht = con.check_erfpacht_bsn(identifier)
 
-
 print("has_erfpacht", has_erfpacht)
+
+notifications = con.get_notifications(identifier, "bsn")
+
+print("notifications_erfpacht", notifications)
